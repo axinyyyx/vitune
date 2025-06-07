@@ -1,6 +1,6 @@
 var results_container = document.querySelector("#saavn-results")
 var results_objects = {};
-const searchUrl = "https://api-jio-saavan.vercel.app/api/search/songs?query=";
+const searchUrl = "https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=";
 function SaavnSearch() {
 event.preventDefault(); // stop page changing to #, which will reload the page
 var query = document.querySelector("#saavn-search-box").value.trim()
@@ -120,7 +120,7 @@ function TextAbstract(text, length) {
 }
 if(window.location.hash) {
    doSaavnSearch(window.location.hash.substring(1));
-} else {doSaavnSearch('english',1);}
+} else {doSaavnSearch('Honey Singh',1);}
 
 addEventListener('hashchange', event => { });
 onhashchange = event => {doSaavnSearch(window.location.hash.substring(1))};
