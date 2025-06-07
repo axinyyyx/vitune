@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <!--
-Developer : axinyyyx ,
-Contribute: https://github.com/axinyyyx/vitune ,
+Developer: axinyyyx,
+Contribute: https://github.com/axinyyyx/rs.vitune,
 Don't forget to star the repo
 -->
 <head>
@@ -10,6 +10,7 @@ Don't forget to star the repo
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>ViTune Music Player</title>
     <meta name="description" content="ViTune Music Player is an Ad-Free Music Player, High Quality MP3 Songs with Metadata support, and a Modern Design. A large library of songs. developed by axinyyyx">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Bitter:400,700">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700">
@@ -22,7 +23,7 @@ Don't forget to star the repo
             <div class="container"><a class="navbar-brand" href="#">ViTune</a><button data-toggle="collapse" class="navbar-toggler" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
                 <div class="collapse navbar-collapse" id="navcol-1">
                     <ul class="navbar-nav">
-                        <li class="nav-item"><a class="btn btn-primary" role="button" href="https://github.com/axinyyyx/vitune" target="_blank">Github</a></li>
+                        <li class="nav-item"><a class="btn btn-primary" role="button" href="https://github.com/axinyyyx/rs.vitune" target="_blank">Github</a></li>
                     </ul>
                 </div>
             </div>
@@ -31,12 +32,11 @@ Don't forget to star the repo
             <div class="row">
                 <div class="col-md-8 offset-md-2">
                     <h1 class="text-center" style="margin: 0px;">ViTune</h1>
-                    <h3 class="text-center" style="color: rgba(249,255,255,0.81);font-family: Bitter, serif;">Music Player &amp; Downloader</h3>
-                    <p class="text-center" style="padding: 0px 5px;">Ad-Free, Metadata, &amp; Modern Design</p>
+                    <h3 class="text-center" style="color: rgba(249,255,255,0.81);font-family: Bitter, serif;">Music Player & Downloader</h3>
+                    <p class="text-center" style="padding: 0px 5px;">Ad-Free, Metadata, & Modern Design</p>
                 </div>
             </div>
         </div>
-        
     </header>
     <div>
         <div class="tab-content">
@@ -48,40 +48,38 @@ Don't forget to star the repo
                             <option value="3" selected="">160kbps</option>
                             <option value="2">96kbps</option>
                             <option value="1">48kbps</option>
-                        </select></div>
+                        </select>
+                    </div>
                     <p class="text-center" style="padding: 0px 5px;"></p>
                     <div class="container" style="padding: 0px;">
                         <div class="intro">
                             <form class="text-center" action="#" method="get">
-                                <div style="width: 95%;margin: auto;padding: 3px;" placeholder="Enter Song, Artist or Album name"><input class="form-control float-left fit-content" type="text" id="ViTune-search-box" style="margin: 0px;color: var(--gray-dark);max-width: 100%;width: 75%;" placeholder="Enter Name, Year, Artist"><button class="btn btn-primary" id="ViTune-search-trigger" type="submit" style="text-align: center;" onclick="ViTuneSearch()">Search</button></div>
+                                <div style="width: 95%;margin: auto;padding: 3px;" placeholder="Enter Song, Artist or Album name">
+                                    <input class="form-control float-left fit-content" type="text" id="ViTune-search-box" style="margin: 0px;color: var(--gray-dark);max-width: 100%;width: 75%;" placeholder="Enter Name, Year, Artist">
+                                    <button class="btn btn-primary" id="ViTune-search-trigger" type="submit" style="text-align: center;" onclick="ViTuneSearch()">Search</button>
+                                </div>
                                 <h5 class="text-uppercase text-center" style="color: rgb(165,255,184);">Results</h5>
                             </form>
                         </div>
-                            <div id="ViTune-results" style="margin-bottom: 20px;">
-                                <h5>Featured</h5>
-                            </div>
-                            <div class="text-center" style="width:100%"><button id="loadmore" style="width: 100%;">Load More</button></div>
-                            <div class="button-container">
-                            </div>
-                            <script>
-                                const buttonTitles = ['2023','English Songs','Edward Maya','Zack Knight','Akcent','Arijit Singh','Enrique Iglesias','Pitbull','Imran Khan', 'DJ Snake', 'Darshan Raval', 'Jubin Nautiyal', 'Armaan Malik', 'Old Songs',"Adele","Billie Eilish","Imagine Dragons","Ed Sheeran","Neha Kakkar", "Badshah", "Atif Aslam", "Guru Randhawa", "Shreya Ghoshal", "Tony Kakkar", "Harrdy Sandhu", "Armaan Malik", "Diljit Dosanjh", "Sonu Nigam", "Vishal Dadlani", "Kanika Kapoor", "Sukhwinder Singh", "Sunidhi Chauhan", "Mika Singh", "Shaan", "Mohit Chauhan", "Pritam", "KK", "Yo Yo Honey Singh","Taylor Swift","Sia","Radioactive","Halsey","The Chainsmokers","Drake","Justin Bieber","Beyonce","The Weeknd","Rihanna","Lady Gaga","AC/DC","Michael Jackson","The Rolling Stones"];
-                                const buttonContainer = document.querySelector('.button-container');
+                        <div id="ViTune-results" style="margin-bottom: 20px;">
+                            <h5>Featured</h5>
+                        </div>
+                        <div class="text-center" style="width:100%"><button id="loadmore" style="width: 100%;">Load More</button></div>
+                        <div class="button-container"></div>
+                        <script>
+                            const buttonTitles = ['2025','English Songs','Edward Maya','Zack Knight','Akcent','Arijit Singh','Enrique Iglesias','Pitbull','Imran Khan', 'DJ Snake', 'Darshan Raval', 'Jubin Nautiyal', 'Armaan Malik', 'Old Songs',"Adele","Billie Eilish","Imagine Dragons","Ed Sheeran","Neha Kakkar", "Badshah", "Atif Aslam", "Guru Randhawa", "Shreya Ghoshal", "Tony Kakkar", "Harrdy Sandhu", "Armaan Malik", "Diljit Dosanjh", "Sonu Nigam", "Vishal Dadlani", "Kanika Kapoor", "Sukhwinder Singh", "Sunidhi Chauhan", "Mika Singh", "Shaan", "Mohit Chauhan", "Pritam", "KK", "Yo Yo Honey Singh","Taylor Swift","Sia","Radioactive","Halsey","The Chainsmokers","Drake","Justin Bieber","Beyonce","The Weeknd","Rihanna","Lady Gaga","AC/DC","Michael Jackson","The Rolling Stones"];
+                            const buttonContainer = document.querySelector('.button-container');
 
-                                buttonTitles.forEach(title => {
+                            buttonTitles.forEach(title => {
                                 const button = document.createElement('button');
                                 button.classList.add('search-toggle');
                                 button.textContent = title;
                                 button.setAttribute('onclick', `doViTuneSearch('${title}')`);
                                 buttonContainer.appendChild(button);
-                                });
-                            </script>
-                   
-                        <p class="footer" align="center">
-                           developed by axinyyyx.<br>
-                        </p>
-                        <div style="padding-bottom: 40px;">
-
-                        </div>
+                            });
+                        </script>
+                        <p class="footer" align="center">developed by axinyyyx.<br></p>
+                        <div style="padding-bottom: 40px;"></div>
                     </div>
                 </section>
             </div>
@@ -93,7 +91,9 @@ Don't forget to star the repo
                 <img class="img-fluid d-inline" id="player-image" style="height: 75px;width: 75px;border-radius: 10px;" src="https://i.pinimg.com/originals/ed/54/d2/ed54d2fa700d36d4f2671e1be84651df.jpg" loading="lazy">
             </div>
             <div class="col fit-content" style="padding: 0px;">
-                <div style="max-height: 24px;max-width: 95%;word-wrap: normal; padding-left: 20px;"><span id="player-name">Song</span><span><br></span><span id="player-album">Album</span></div><br>
+                <div style="max-height: 24px;max-width: 95%;word-wrap: normal; padding-left: 20px;">
+                    <span id="player-name">Song</span><span><br></span><span id="player-album">Album</span>
+                </div><br>
                 <audio id="player" controls="controls" controlsList="nodownload" style="width: 100%;height: 30px; padding-left: 20px; padding-top:5px;">
                     <source id="audioSource" src=""></source>
                     Your browser does not support the audio format.
@@ -101,58 +101,62 @@ Don't forget to star the repo
             </div>
         </div>
     </div>
-    <!-- floating downloader popup -->
-    <!-- <div class=”float-button” style="width:30px; height:30px; border-radius:50%; background-color:#fff; box-shadow: 0 0 10px #000; cursor:pointer; position:fixed;top:50px; right:20px; z-index:9999;"> -->
-    <!-- download icon -->
-    
-    <img src="https://img.icons8.com/ios/50/000000/download.png">
-    </a></div>
+    <!-- Floating downloader popup -->
+    <div class="float-button" id="mpopupLink" style="width:30px; height:30px; border-radius:50%; background-color:#007bff; border: 2px solid #007bff; cursor:pointer; position:fixed;top:50px; right:20px; z-index:9999;">
+        <img src="https://img.icons8.com/ios/50/000000/download.png" style="width:20px; height:20px; margin:5px;">
+    </div>
     <style>
-                                
-        #ViTune-results{
-        display: flex;
-        flex-wrap: wrap;
+        #ViTune-results {
+            display: flex;
+            flex-wrap: wrap;
         }
         /* Three columns on desktop */
         @media screen and (min-width: 992px) {
-        .song-container {
-            width: calc(33.33% - 20px);
-            margin: 0 10px 20px 10px;
+            .song-container {
+                width: calc(33.33% - 20px);
+                margin: 0 10px 20px 10px;
+            }
         }
-        }
-
-        /* Two columns on desktop */
+        /* Two columns on tablet */
         @media screen and (min-width: 768px) and (max-width: 991px) {
-        .song-container {
-            width: calc(50% - 20px);
-            margin: 0 10px 20px 10px;
+            .song-container {
+                width: calc(50% - 20px);
+                margin: 0 10px 20px 10px;
+            }
         }
-        }
-
         /* One column on mobile */
         @media screen and (max-width: 767px) {
-        .song-container {
-            width: calc(100% - 20px);
-            margin: 0 10px 20px 10px;
-        }
+            .song-container {
+                width: calc(100% - 20px);
+                margin: 0 10px 20px 10px;
+            }
         }
         .search-toggle-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        width: 95%;
-        margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 95%;
+            margin: 0 auto;
         }
         .search-toggle {
-        background: rgba(0, 0, 0, 0.1);
-        color: #fff;
-        font-size: 18px;
-        font-family: Aclonica, sans-serif;
-        padding: 6px;
-        border-style: none;
+            background: rgba(0, 0, 0, 0.1);
+            color: #fff;
+            font-size: 18px;
+            font-family: Aclonica, sans-serif;
+            padding: 6px;
+            border-style: none;
         }
-        .search-toggle:nth-child(10n+1){color:#ceea82}.search-toggle:nth-child(10n+2){color:#70cee2}.search-toggle:nth-child(10n+3){color:#ef2b2d}.search-toggle:nth-child(10n+4){color:#23b805}.search-toggle:nth-child(10n+5){color:var(--primary)}.search-toggle:nth-child(10n+6){color:#cee007}.search-toggle:nth-child(10n+7){color:#ff77a8}.search-toggle:nth-child(10n+8){color:#21a9af}.search-toggle:nth-child(10n+9){color:var(--warning)}.search-toggle:nth-child(10n+10){color:#e316e7}
+        .search-toggle:nth-child(10n+1){color:#ceea82}
+        .search-toggle:nth-child(10n+2){color:#70cee2}
+        .search-toggle:nth-child(10n+3){color:#ef2b2d}
+        .search-toggle:nth-child(10n+4){color:#23b805}
+        .search-toggle:nth-child(10n+5){color:var(--primary)}
+        .search-toggle:nth-child(10n+6){color:#cee007}
+        .search-toggle:nth-child(10n+7){color:#ff77a8}
+        .search-toggle:nth-child(10n+8){color:#21a9af}
+        .search-toggle:nth-child(10n+9){color:var(--warning)}
+        .search-toggle:nth-child(10n+10){color:#e316e7}
     </style>
     <style>
         .mpopup {
@@ -170,113 +174,110 @@ Don't forget to star the repo
             display: none;
         }
         ul.nobullets {
-  list-style-type: none; /* Remove bullets */
-  padding: 0; /* Remove padding */
-  margin: 0; /* Remove margins */
-}
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .modal-content {
+            background: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .modal-header, .modal-footer {
+            padding: 10px;
+        }
+        .modal-body {
+            padding: 15px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover, .close:focus {
+            color: black;
+            text-decoration: none;
+        }
     </style>
     <!-- Modal popup box -->
-<div id="mpopupBox" class="mpopup">
-    <!-- Modal content -->
-    <div class="modal-content">
-    
-        <div class="modal-header" style="display:inline;">
-            <span class="close">×</span>
-            <h2>Downloads</h2>
+    <div id="mpopupBox" class="mpopup">
+        <div class="modal-content">
+            <div class="modal-header" style="display:inline;">
+                <span class="close">×</span>
+                <h2>Downloads</h2>
+            </div>
+            <div class="modal-body">
+                <row>
+                    <ul id="download-list" class="nobullets"></ul>
+                </row>
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <p>Don't flood the Media Server, Have patience...</p>
+            </div>
         </div>
-        <div class="modal-body">
-            <!-- list of songs, with a small cover art pic, name, album name -->
-            <row>
-            <ul id="download-list" class="nobullets">
-                    <!--<li>
-                    <div class="col">
-                        
-                        <img id="download-cover" src="https://i.pinimg.com/originals/ed/54/d2/ed54d2fa700d36d4f2671e1be84651df.jpg" width="50px">
-                        <div style="display: inline;">
-                        <span id="download-name">Song</span>
-                        <span id="download-album">Album</span>
-                        <br>
-                        <span id="download-size">Size</span>
-                        <span id="download-status" style="color:green">Compiling.</span>
-                        </div>
-                    </div>
-                    <hr>
-                    </li>-->
-                    
-
-
-                
-                </ul></row>
-        </div>
-        <div class="modal-footer" style="text-align: center;">
-            <p>Don't flood the Media Server, Have patience...</p>
-        </div>
-    
     </div>
-</div>
-<script>
-    // Select modal
-    var mpopup = document.getElementById('mpopupBox');
-    
-    // Select trigger link
-    var mpLink = document.getElementById("mpopupLink");
-    
-    // Select close action element
-    var close = document.getElementsByClassName("close")[0];
-    
-    // Open modal once the link is clicked
-    mpLink.onclick = function() {
-        mpopup.style.display = "block";
-    };
-    
-    // Close modal once close element is clicked
-    close.onclick = function() {
-        mpopup.style.display = "none";
-    };
-    
-    // Close modal when user clicks outside of the modal box
-    window.onclick = function(event) {
-        if (event.target == mpopup) {
-            mpopup.style.display = "none";
-        }
-    };
-    </script>
-    
     <script>
-    // Disable Zoom by Keyboard
-    document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=')) {
-        e.preventDefault();
-      }
-      // Disable refresh
-      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')) {
-        e.preventDefault();
-      }
-    });
+        // Modal functionality
+        var mpopup = document.getElementById('mpopupBox');
+        var mpLink = document.getElementById("mpopupLink");
+        var close = document.getElementsByClassName("close")[0];
 
-    // Disable Zoom by mouse wheel
-    window.addEventListener('wheel', function(e) {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+        mpLink.onclick = function() {
+            mpopup.style.display = "block";
+        };
+        close.onclick = function() {
+            mpopup.style.display = "none";
+        };
+        window.onclick = function(event) {
+            if (event.target == mpopup) {
+                mpopup.style.display = "none";
+            }
+        };
+    </script>
+    <script>
+        // Disable Zoom and Refresh
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=')) {
+                e.preventDefault();
+            }
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')) {
+                e.preventDefault();
+            }
+        });
 
-    // Disable pinch zoom on mobile
-    window.addEventListener('touchstart', function (e) {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+        window.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
-    window.addEventListener('gesturestart', function (e) {
-      e.preventDefault();
-    });
-  </script>
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+            if (e.touches.length === 1 && e.target === document.body) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
+        window.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+        });
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/functions.js"></script>
     <script src="assets/js/ViTune-search.js"></script>
 </body>
-
 </html>
