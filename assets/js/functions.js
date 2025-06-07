@@ -8,7 +8,7 @@ function PlayAudio(audio_url, song_id) {
   var image = document.getElementById(song_id+"-i").getAttribute("src");
     
 document.title = name+" - "+album;
-var bitrate = document.getElementById('saavn-bitrate');
+var bitrate = document.getElementById('ViTune-bitrate');
 var bitrate_i = bitrate.options[bitrate.selectedIndex].value;
 var quality = "";
 if (bitrate_i == 4) {quality = 320} else {quality = 160;}
@@ -34,7 +34,7 @@ var goButton = document.getElementById("search-trigger");
 }
 var DOWNLOAD_API = "https://openmp3compiler.astudy.org"
 function AddDownload(id) {
-    var bitrate = document.getElementById('saavn-bitrate');
+    var bitrate = document.getElementById('ViTune-bitrate');
     var bitrate_i = bitrate.options[bitrate.selectedIndex].value;
     // MP3 server API
     var MP3DL = DOWNLOAD_API+"/add?id="+id;
