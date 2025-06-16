@@ -2,30 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ViTune Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>ViTune Settings </title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&family=Arial&family=Times+New+Roman" rel="stylesheet">
+    <link rel="shortcut icon" href="favicon.ico" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&family=Arial&family=Helvetica" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <base href="/vitune/">
+    <base href="/playtune/">
 </head>
-<body class="bg-gray-900 text-white font-poppins no-scrollbar transition-all duration-200">
+<body class="bg-gray-900 text-white font-poppins no-scrollbar transition-all duration-300">
     <!-- Navbar -->
     <nav class="sticky top-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 accent-teal transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
             <div class="flex items-center space-x-2">
-                <img src="img/logo.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
+                <img src="img/58964258.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
                 <h1 class="text-xl font-bold">ViTune Settings</h1>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 no-scrollbar" id="settings-content">
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+    <main class="container mx-auto px-4 py-6 pb-4" id="settings-content">
+        <div class="bg-gray-900 rounded-lg p-4 mb-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Appearance</h2>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Theme</label>
@@ -88,7 +88,7 @@
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Playback</h2>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Progress Bar Color</label>
@@ -129,7 +129,7 @@
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Ideas & Suggestions</h2>
             <p class="text-sm text-gray-400 mb-2">Have an idea or suggestion to improve ViTune? Share it with us!</p>
             <div class="flex space-x-4">
@@ -145,7 +145,7 @@
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Report a Bug</h2>
             <p class="text-sm text-gray-400 mb-2">Found a bug or issue? Let us know so we can fix it!</p>
             <div class="flex space-x-4">
@@ -161,12 +161,12 @@
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Reset Settings</h2>
             <button id="reset-settings" class="bg-red-500 text-white rounded-full py-2 px-4 hover:bg-red-600 text-sm transition duration-200">Reset to Default</button>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 setting-card transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 setting-card-grid transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">About Developer</h2>
             <div class="flex items-center space-x-4">
                 <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-20 h-20 rounded-full object-cover shadow-md">

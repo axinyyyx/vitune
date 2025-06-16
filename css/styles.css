@@ -1,5 +1,7 @@
-/* Existing styles (assumed to be unchanged) */
+/* Global styles */
 body {
+    /* min-height: 100vh; */
+    overflow: hidden; /* Prevent body scrolling */
     overscroll-behavior-y: none;
     touch-action: auto;
 }
@@ -10,21 +12,23 @@ body {
 }
 
 .no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, and Opera */
+    display: none; /* Chrome, Safari, Opera */
 }
 
 /* Settings page specific styles */
 #settings-content {
-    max-height: calc(100vh - 64px); /* Adjust for navbar height */
-    overflow-y: auto;
+    min-height: calc(100vh - 4rem); /* Dynamic height minus navbar (~64px) */
+    overflow-y: auto; /* Enable scrolling */
     overscroll-behavior-y: contain;
+    padding-bottom: 4rem; /* Clear mobile browser chrome */
 }
 
-.setting-card {
+.setting-card-grid {
     backdrop-filter: blur(5px);
+    background-color: rgba(31, 41, 55, 0.9);
 }
 
-.setting-card select {
+.setting-card-grid select {
     appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
@@ -49,7 +53,7 @@ body {
 .accent-purple { color: #AB47BC; }
 .accent-pink { color: #EC407A; }
 
-/* Progress bar styles (unchanged, for reference) */
+/* Progress bar styles */
 .progress-bar-teal { background-color: #26A69A; }
 .progress-bar-red { background-color: #EF5350; }
 .progress-bar-blue { background-color: #42A5F5; }
@@ -59,11 +63,24 @@ body {
 .progress-bar-gradient { background-image: linear-gradient(to right, #26A69A, #42A5F5); }
 .progress-bar-wave { background-image: url('img/wave.png'); background-size: cover; }
 
-/* Song transparency (unchanged, for reference) */
+/* Song transparency */
 .song-transparent {
     background-color: rgba(31, 41, 55, 0.5);
     backdrop-filter: blur(5px);
 }
+
+/* Other existing styles (assumed unchanged) */
+.song-container, #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list {
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.song-container::-webkit-scrollbar, #ViTune-results::-webkit-scrollbar, #home-content::-webkit-scrollbar, #playlists-list::-webkit-scrollbar, #likes-list::-webkit-scrollbar, #offline-list::-webkit-scrollbar {
+    display: none;
+}
+
 #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
     overscroll-behavior-y: contain;
     overflow-y: auto;
