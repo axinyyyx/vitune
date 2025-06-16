@@ -101,6 +101,18 @@ $(document).ready(function() {
             if (e.target === elements.mpopup[0]) elements.mpopup.addClass('hidden');
         });
         disableRefreshAndZoom();
+        disablePullToRefresh();
+    }
+
+    // Disable Pull-to-Refresh on Mobile
+    function disablePullToRefresh() {
+        $('body').css('touch-action', 'none');
+        $(document).on('touchmove', (e) => {
+            if (e.originalEvent.touches.length === 1 && $(e.target).closest('#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list').length) {
+                return;
+            }
+            e.preventDefault();
+        });
     }
 
     // Disable Refresh and Zoom
@@ -112,9 +124,11 @@ $(document).ready(function() {
             }
         });
         window.onbeforeunload = (e) => {
-            if (state.allowNavigation) return;
+            if (state.allowNavigation || (e.target && e.target.activeElement && e.target.activeElement.href && e.target.activeElement.href.includes('settings.html'))) {
+                return;
+            }
             e.preventDefault();
-            e.returnValue = '';
+            e.returnValue = 'Changes you made may not be saved.';
         };
         $(document).on('gesturestart wheel', (e) => {
             if (e.ctrlKey || e.metaKey) e.preventDefault();
@@ -218,7 +232,14 @@ $(document).ready(function() {
 
         elements.playerMinimal.off('click').on('click', (e) => {
             if (!$(e.target).closest('.control-btn').length) {
-                console.log('Minimal player clicked');
+                console.log('Minimal player clicked, current state:', state.isDetailedView);
+                togglePlayerView();
+            }
+        });
+
+        elements.playerDetailed.off('click').on('click', (e) => {
+            if (!$(e.target).closest('.control-btn, #progress-container').length) {
+                console.log('Detailed player clicked, current state:', state.isDetailedView);
                 togglePlayerView();
             }
         });
@@ -282,7 +303,9 @@ $(document).ready(function() {
             },
             ended: () => {
                 console.log('Song ended');
-                playNextSong();
+                if (!state.isLooping) {
+                    playNextSong();
+                }
             }
         });
 
@@ -321,14 +344,26 @@ $(document).ready(function() {
     // Toggle Player View
     function togglePlayerView() {
         state.isDetailedView = !state.isDetailedView;
+        console.log('Toggling player view, new state:', state.isDetailedView);
         if (state.isDetailedView) {
             elements.playerMinimal.addClass('hidden');
             elements.playerDetailed.removeClass('hidden');
+            console.log('Showing detailed view, hiding minimal view');
         } else {
             elements.playerMinimal.removeClass('hidden');
             elements.playerDetailed.addClass('hidden');
+            console.log('Showing minimal view, hiding detailed view');
         }
-        console.log('Player view toggled:', state.isDetailedView ? 'Detailed' : 'Minimal');
+    }
+
+    // Toggle Loop
+    function toggleLoop() {
+        state.isLooping = !state.isLooping;
+        elements.player[0].loop = state.isLooping;
+        elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
+        elements.loopBtn.html(state.isLooping ? '<span class="infinity-icon">∞</span>' : '<span class="infinity-icon">∞</span>');
+        elements.loopBtn.toggleClass('active', state.isLooping);
+        console.log('Loop state:', state.isLooping, 'Audio loop attribute:', elements.player[0].loop);
     }
 
     // Search Functions
@@ -362,7 +397,7 @@ $(document).ready(function() {
         showTab('search');
         query = query.trim().replace(/\s+/g, ' ');
         const encodedQuery = encodeURIComponent(query);
-        window.location.hash = query; // Use raw query to preserve spaces
+        window.location.hash = query;
         elements.searchBox.val(query);
         elements.status.text('Searching...');
         elements.results.html('<span class="loader"></span>');
@@ -528,15 +563,6 @@ $(document).ready(function() {
     }
 
     function playNextSong() {
-        if (state.isLooping && state.currentSongId) {
-            const song = state.resultsObjects[state.currentSongId]?.track;
-            if (song) {
-                playAudio(song.url, song.id);
-                console.log('Looping current song:', song.name);
-                return;
-            }
-        }
-
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             playAudio(nextSong.url, nextSong.id);
@@ -572,13 +598,6 @@ $(document).ready(function() {
             }
         }
         console.log('Playing previous song');
-    }
-
-    function toggleLoop() {
-        state.isLooping = !state.isLooping;
-        elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
-        elements.loopBtn.find('i').toggleClass('fa-repeat', state.isLooping).toggleClass('fa-repeat', !state.isLooping);
-        console.log('Loop state:', state.isLooping);
     }
 
     function updateProgress() {
@@ -718,7 +737,7 @@ $(document).ready(function() {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (!playlists[playlistName]) playlists[playlistName] = [];
         if (!playlists[playlistName].some(s => s.id === song.id)) {
-            playlists[playlistName].unshift(song); // Add to start for latest first
+            playlists[playlistName].unshift(song);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Added to "${playlistName}"`);
             if ($('#playlists-tab').is(':visible')) {
@@ -1129,7 +1148,9 @@ $(document).ready(function() {
     function setupAutoPlay() {
         elements.player[0].addEventListener('ended', () => {
             console.log('Song ended');
-            playNextSong();
+            if (!state.isLooping) {
+                playNextSong();
+            }
         });
     }
 

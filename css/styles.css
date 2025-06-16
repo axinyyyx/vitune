@@ -1,3 +1,23 @@
+/* Existing styles */
+body {
+    touch-action: none;
+}
+
+#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list {
+    touch-action: auto;
+}
+
+/* Style for infinity icon */
+.infinity-icon {
+    font-size: 1.2em;
+    display: inline-block;
+    transition: color 0.2s;
+}
+
+#loop-btn.active .infinity-icon {
+    color: #2dd4bf; /* Teal-300 */
+}
+
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
