@@ -54,7 +54,8 @@ $(document).ready(function() {
         isPlaying: false,
         isDetailedView: false,
         allowNavigation: false,
-        currentPlaylistView: null
+        currentPlaylistView: null,
+        isTransitioning: false // Prevent multiple playNextSong calls
     };
 
     const STORAGE_KEYS = {
@@ -224,10 +225,19 @@ $(document).ready(function() {
             togglePlayPause();
         });
 
+        const debouncedNext = debounce(() => {
+            console.log('Next clicked (debounced)');
+            playNextSong();
+        }, 300);
+
         elements.nextBtnMinimal.off('click').on('click', (e) => {
             e.stopPropagation();
-            console.log('Next minimal clicked');
-            playNextSong();
+            debouncedNext();
+        });
+
+        elements.nextBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            debouncedNext();
         });
 
         elements.playerMinimal.off('click').on('click', (e) => {
@@ -248,12 +258,6 @@ $(document).ready(function() {
             e.stopPropagation();
             console.log('Previous clicked');
             playPreviousSong();
-        });
-
-        elements.nextBtn.off('click').on('click', (e) => {
-            e.stopPropagation();
-            console.log('Next clicked');
-            playNextSong();
         });
 
         elements.loopBtn.off('click').on('click', (e) => {
@@ -294,18 +298,13 @@ $(document).ready(function() {
             seekSong(e);
         });
 
-        elements.player.off('timeupdate error ended').on({
+        elements.player.off('timeupdate error').on({
             timeupdate: updateProgress,
             error: () => {
                 console.error('Playback error:', elements.audioSource.attr('src'));
                 elements.status.text('Error: Song unavailable. Skipping...');
+                state.isTransitioning = false;
                 playNextSong();
-            },
-            ended: () => {
-                console.log('Song ended');
-                if (!state.isLooping) {
-                    playNextSong();
-                }
             }
         });
 
@@ -361,9 +360,19 @@ $(document).ready(function() {
         state.isLooping = !state.isLooping;
         elements.player[0].loop = state.isLooping;
         elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
-        elements.loopBtn.html(state.isLooping ? '<span class="infinity-icon">∞</span>' : '<span class="infinity-icon">∞</span>');
         elements.loopBtn.toggleClass('active', state.isLooping);
         console.log('Loop state:', state.isLooping, 'Audio loop attribute:', elements.player[0].loop);
+
+        // Remove existing label if any
+        $('.loop-state-label').remove();
+
+        // Create and show ON/OFF label
+        const labelText = state.isLooping ? 'ON' : 'OFF';
+        const label = $(`<span class="loop-state-label">${labelText}</span>`);
+        elements.loopBtn.parent().css('position', 'relative').append(label);
+        setTimeout(() => {
+            label.fadeOut(500, () => label.remove());
+        }, 2000);
     }
 
     // Search Functions
@@ -488,10 +497,18 @@ $(document).ready(function() {
 
     // Playback Functions
     async function playAudio(audioUrl, songId) {
+        if (state.isTransitioning) {
+            console.log('playAudio blocked: Transition in progress');
+            return;
+        }
+        state.isTransitioning = true;
+        console.log('playAudio called for songId:', songId);
+
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
             console.error('Song not found:', songId);
             elements.status.text('Error: Song not found.');
+            state.isTransitioning = false;
             return;
         }
 
@@ -500,6 +517,7 @@ $(document).ready(function() {
             if (!response.ok) throw new Error('Song unavailable');
         } catch {
             elements.status.text('Error: Song unavailable. Skipping...');
+            state.isTransitioning = false;
             playNextSong();
             return;
         }
@@ -535,9 +553,11 @@ $(document).ready(function() {
             state.isPlaying = true;
             elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
             console.log('Playing song:', song.name);
+            state.isTransitioning = false;
         }).catch(error => {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song.');
+            state.isTransitioning = false;
             playNextSong();
         });
 
@@ -563,31 +583,82 @@ $(document).ready(function() {
     }
 
     function playNextSong() {
+        if (state.isTransitioning) {
+            console.log('playNextSong blocked: Transition in progress');
+            return;
+        }
+        state.isTransitioning = true;
+        console.log('playNextSong called, playQueue length:', state.playQueue.length);
+
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
+            console.log('Playing from queue:', nextSong.name);
             playAudio(nextSong.url, nextSong.id);
             savePlayQueue();
-        } else {
-            const songContainers = $('.song-container[data-song-id]');
-            const currentIndex = songContainers.index($(`[data-song-id="${state.currentSongId}"]`));
-            if (currentIndex < songContainers.length - 1) {
-                const nextSongId = songContainers.eq(currentIndex + 1).data('song-id');
-                const nextSong = state.resultsObjects[nextSongId]?.track;
-                if (nextSong) {
-                    playAudio(nextSong.url, nextSongId);
-                }
-            } else if (state.isLooping) {
-                const firstSongId = songContainers.first().data('song-id');
-                const firstSong = state.resultsObjects[firstSongId]?.track;
-                if (firstSong) {
-                    playAudio(firstSong.url, firstSongId);
-                }
-            }
+            return;
         }
-        console.log('Playing next song');
+
+        const songContainers = $('.song-container[data-song-id]');
+        if (songContainers.length === 0) {
+            console.log('No songs available in current context');
+            elements.status.text('No more songs to play.');
+            state.isPlaying = false;
+            elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
+            state.isTransitioning = false;
+            return;
+        }
+
+        const currentIndex = songContainers.index($(`[data-song-id="${state.currentSongId}"]`));
+        if (currentIndex === -1) {
+            console.log('Current song not found in context, playing first song');
+            const firstSongId = songContainers.first().data('song-id');
+            const firstSong = state.resultsObjects[firstSongId]?.track;
+            if (firstSong) {
+                playAudio(firstSong.url, firstSongId);
+            } else {
+                elements.status.text('Error: Song not found.');
+                state.isTransitioning = false;
+            }
+            return;
+        }
+
+        if (currentIndex < songContainers.length - 1) {
+            const nextSongId = songContainers.eq(currentIndex + 1).data('song-id');
+            const nextSong = state.resultsObjects[nextSongId]?.track;
+            console.log('Playing next song in context:', nextSong?.name);
+            if (nextSong) {
+                playAudio(nextSong.url, nextSongId);
+            } else {
+                elements.status.text('Error: Next song not found.');
+                state.isTransitioning = false;
+            }
+        } else if (state.isLooping) {
+            const firstSongId = songContainers.first().data('song-id');
+            const firstSong = state.resultsObjects[firstSongId]?.track;
+            console.log('Looping to first song:', firstSong?.name);
+            if (firstSong) {
+                playAudio(firstSong.url, firstSongId);
+            } else {
+                elements.status.text('Error: First song not found.');
+                state.isTransitioning = false;
+            }
+        } else {
+            console.log('End of playlist, stopping playback');
+            elements.status.text('End of playlist.');
+            state.isPlaying = false;
+            elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
+            state.isTransitioning = false;
+        }
     }
 
     function playPreviousSong() {
+        if (state.isTransitioning) {
+            console.log('playPreviousSong blocked: Transition in progress');
+            return;
+        }
+        state.isTransitioning = true;
+        console.log('playPreviousSong called');
+
         const songContainers = $('.song-container[data-song-id]');
         const currentIndex = songContainers.index($(`[data-song-id="${state.currentSongId}"]`));
         if (currentIndex > 0) {
@@ -595,9 +666,14 @@ $(document).ready(function() {
             const prevSong = state.resultsObjects[prevSongId]?.track;
             if (prevSong) {
                 playAudio(prevSong.url, prevSongId);
+            } else {
+                elements.status.text('Error: Previous song not found.');
+                state.isTransitioning = false;
             }
+        } else {
+            elements.status.text('No previous song.');
+            state.isTransitioning = false;
         }
-        console.log('Playing previous song');
     }
 
     function updateProgress() {
@@ -1146,8 +1222,8 @@ $(document).ready(function() {
     }
 
     function setupAutoPlay() {
-        elements.player[0].addEventListener('ended', () => {
-            console.log('Song ended');
+        elements.player.off('ended').on('ended', () => {
+            console.log('Song ended, isLooping:', state.isLooping);
             if (!state.isLooping) {
                 playNextSong();
             }
