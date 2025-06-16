@@ -1,122 +1,75 @@
-/* Global styles */
+/* Existing styles */
 body {
-    min-height: 100vh;
+    overscroll-behavior-y: none;
     touch-action: auto;
 }
 
-.no-scrollbar {
+#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    max-height: 100vh;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
 }
 
-.no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+#ViTune-results::-webkit-scrollbar,
+#home-content::-webkit-scrollbar,
+#playlists-list::-webkit-scrollbar,
+#likes-list::-webkit-scrollbar,
+#offline-list::-webkit-scrollbar,
+#settings-content::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
 }
 
-/* Scrollable content containers */
-#settings-content,
-#home-content,
-#ViTune-results,
-#playlists-list,
-#likes-list,
-#offline-list {
-    min-height: calc(100vh - 4rem); /* Adjust for navbar height */
-    overflow-y: auto; /* Enable scrolling */
-    overscroll-behavior-y: contain;
-    padding-bottom: 4rem; /* Clear mobile browser chrome */
-}
-
-/* Settings card styles */
-.setting-card-grid {
-    backdrop-filter: blur(5px);
-    background-color: rgba(31, 41, 55, 0.9);
-}
-
-.setting-card-grid select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1em;
-}
-
-/* Font size classes */
-.font-xsmall { font-size: 0.75rem; }
-.font-small { font-size: 0.875rem; }
-.font-medium { font-size: 1rem; }
-.font-large { font-size: 1.125rem; }
-.font-xlarge { font-size: 1.25rem; }
-
-/* Animation speed classes */
-.animation-fast { transition-duration: 100ms; }
-.animation-normal { transition-duration: 200ms; }
-.animation-slow { transition-duration: 300ms; }
-
-/* Accent color classes */
-.accent-teal { color: #26A69A; }
-.accent-purple { color: #AB47BC; }
-.accent-pink { color: #EC407A; }
-
-/* Progress bar styles */
-.progress-bar-teal { background-color: #26A69A; }
-.progress-bar-red { background-color: #EF5350; }
-.progress-bar-blue { background-color: #42A5F5; }
-.progress-bar-purple { background-color: #AB47BC; }
-.progress-bar-pink { background-color: #EC407A; }
-.progress-bar-simple { background-image: none; }
-.progress-bar-gradient { background-image: linear-gradient(to right, #26A69A, #42A5F5); }
-.progress-bar-wave { background-image: url('img/wave.png'); background-size: cover; }
-
-/* Song transparency */
-.song-transparent {
-    background-color: rgba(31, 41, 55, 0.5);
-    backdrop-filter: blur(5px);
-}
-
-/* Song container and other scrollable areas */
 .song-container {
-    overscroll-behavior-y: contain;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    background-color: #1f2937;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
 }
 
-.song-container::-webkit-scrollbar {
-    display: none;
+.song-container:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Player minimal view (fixed at bottom) */
-#player-minimal {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 40;
+.control-btn {
+    color: #14b8a6;
 }
 
-/* Ensure content doesn't overlap player */
-main {
-    padding-bottom: 6rem; /* Adjust for player height */
+.control-btn:hover {
+    color: #0d9488;
 }
 
-/* Song transparency */
-.song-transparent {
-    background-color: rgba(31, 41, 55, 0.5);
-    backdrop-filter: blur(5px);
+#settings-content {
+    min-height: 150vh; /* Increased to ensure scrollable content */
+    padding: 1rem;
 }
 
-/* Other existing styles (assumed unchanged) */
-.song-container, #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list {
-    overscroll-behavior-y: contain;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+/* New styles for settings sections */
+#settings-content h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
 }
 
-.song-container::-webkit-scrollbar, #ViTune-results::-webkit-scrollbar, #home-content::-webkit-scrollbar, #playlists-list::-webkit-scrollbar, #likes-list::-webkit-scrollbar, #offline-list::-webkit-scrollbar {
-    display: none;
+#settings-content p {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
 }
 
+#settings-content blockquote {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #14b8a6;
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid #14b8a6;
+}
+
+#settings-content .flex.space-x
 #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
     overscroll-behavior-y: contain;
     overflow-y: auto;
