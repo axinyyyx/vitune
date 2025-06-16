@@ -58,6 +58,7 @@ $(document).ready(function() {
     };
 
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
+    const API_TIMEOUT = 10000; // 10 seconds
 
     // Debounce Function
     function debounce(func, wait) {
@@ -75,29 +76,46 @@ $(document).ready(function() {
     // Initialize
     function init() {
         applySettings();
+        cleanHistory();
         loadHomeContent();
         bindEventListeners();
         handleDirectURL();
         setupAutoPlay();
         loadPlayQueue();
         elements.mpopup.find('.close').on('click', () => elements.mpopup.hide());
-        elements.mpLink.on('click', () => elements.mpopup.show());
+        elements.mpLink.on('click', () => elements.mpopup.toggleClass('hidden'));
         $(window).on('click', (e) => {
-            if (e.target === elements.mpopup[0]) elements.mpopup.hide();
+            if (e.target === elements.mpopup[0]) elements.mpopup.addClass('hidden');
         });
+    }
+
+    // Clean Invalid History Entries
+    async function cleanHistory() {
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        const validHistory = [];
+        for (const song of history) {
+            try {
+                const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
+                if (response.ok) validHistory.push(song);
+            } catch {
+                // Skip invalid URLs
+            }
+        }
+        history = validHistory.slice(0, 50);
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
     }
 
     // Apply Settings
     function applySettings() {
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
-        $('body').removeClass('dark light font-poppins font-arial font-times font-small font-medium font-large transparent-on transparent-off');
+        $('body').removeClass('dark light-mode font-poppins font-roboto font-open-sans font-lato font-montserrat font-arial font-times font-small font-medium font-large transparent-on transparent-off');
         $('body').addClass(settings.theme || 'dark');
         $('body').addClass(`font-${settings.fontStyle || 'poppins'}`);
         $('body').addClass(`font-${settings.fontSize || 'medium'}`);
         $('body').addClass(`transparent-${settings.transparentEffect || 'off'}`);
-        $('#audio-player, #mpopupBox .modal-content, #playlist-modal .bg-gray-800').toggleClass('bg-opacity-50', settings.transparentEffect === 'on');
-        elements.progressBar.removeClass('bg-teal-500 bg-red-500 bg-blue-500 progress-bar-simple progress-bar-gradient');
-        elements.progressBar.addClass(`bg-${settings.progressBarColor || 'teal'}-500`);
+        $('#audio-player, #mpopupBox .modal-content, #playlist-modal .bg-gray-800').css('background-color', settings.transparentEffect === 'on' ? 'rgba(31, 41, 55, 0.5)' : 'rgba(31, 41, 55, 1)');
+        elements.progressBar.removeClass('progress-bar-teal progress-bar-red progress-bar-blue progress-bar-simple progress-bar-gradient');
+        elements.progressBar.addClass(`progress-bar-${settings.progressBarColor || 'teal'}`);
         elements.progressBar.addClass(`progress-bar-${settings.progressBarStyle || 'simple'}`);
     }
 
@@ -135,7 +153,7 @@ $(document).ready(function() {
         elements.player.on('timeupdate', updateProgress);
         elements.player.on('error', () => {
             console.error('Playback error:', elements.audioSource.attr('src'));
-            elements.status.text('Error loading song.');
+            elements.status.text('Error: Song unavailable. Skipping...');
             playNextSong();
         });
 
@@ -144,7 +162,13 @@ $(document).ready(function() {
         });
 
         window.addEventListener('hashchange', () => {
-            doViTuneSearch(decodeURIComponent(window.location.hash.substring(1)));
+            const query = decodeURIComponent(window.location.hash.substring(1).replace(/%20/g, '+'));
+            if (query) doViTuneSearch(query);
+        });
+
+        $(window).on('settings:updated storage', (e) => {
+            if (e.type === 'storage' && e.key !== STORAGE_KEYS.SETTINGS) return;
+            applySettings();
         });
     }
 
@@ -163,10 +187,11 @@ $(document).ready(function() {
     }
 
     function handleDirectURL() {
-        const hash = window.location.hash.substring(1);
+        const hash = window.location.hash.substring(1).replace(/%20/g, '+');
         if (hash) {
-            elements.searchBox.val(decodeURIComponent(hash));
-            doViTuneSearch(decodeURIComponent(hash), true);
+            const query = decodeURIComponent(hash);
+            elements.searchBox.val(query);
+            doViTuneSearch(query, true);
             showTab('search');
         } else {
             doViTuneSearch('Honey Singh', true);
@@ -176,11 +201,11 @@ $(document).ready(function() {
     async function doViTuneSearch(query, noScroll = false) {
         if (!query) return;
         query = query.trim().replace(/\s+/g, ' ');
-        const encodedQuery = encodeURIComponent(query);
+        const encodedQuery = encodeURIComponent(query.replace(/\s/g, '+'));
         window.location.hash = encodedQuery;
         elements.searchBox.val(query);
         elements.status.text('Searching...');
-        elements.results.html('<span class="loader">Loading...</span>');
+        elements.results.html('<span class="loader"></span>');
 
         let searchQuery = `${encodedQuery}&limit=40`;
         if (state.pageIndex > 1) {
@@ -189,8 +214,12 @@ $(document).ready(function() {
             state.resultsObjects = {};
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
         try {
-            const response = await fetch(SEARCH_URL + searchQuery);
+            const response = await fetch(SEARCH_URL + searchQuery, { signal: controller.signal });
+            clearTimeout(timeoutId);
             const json = await response.json();
             if (!response.ok) {
                 throw new Error(json.message || 'Unknown API error');
@@ -248,8 +277,9 @@ $(document).ready(function() {
             elements.status.text('');
             bindCardEventListeners();
         } catch (error) {
-            elements.status.text(`Error: ${error.message}`);
-            elements.results.html('<p class="text-center text-sm text-gray-400">Unable to fetch songs. Check your connection.</p>');
+            clearTimeout(timeoutId);
+            elements.status.text(`Error: ${error.name === 'AbortError' ? 'Request timed out' : error.message}`);
+            elements.results.html('<p class="text-center text-sm text-gray-400">Unable to fetch songs.</p>');
             elements.loadMoreBtn.addClass('hidden');
             console.error('Search error:', error);
         }
@@ -262,24 +292,40 @@ $(document).ready(function() {
     }
 
     // Playback Functions
-    function playAudio(audio_url, song_id) {
-        const song = state.resultsObjects[song_id]?.track;
+    async function playAudio(audioUrl, songId) {
+        const song = state.resultsObjects[songId]?.track;
         if (!song) {
-            console.error('Song not found:', song_id);
+            console.error('Song not found:', songId);
+            elements.status.text('Error: Song not found.');
             return;
         }
 
-        state.currentSongId = song_id;
-        elements.audioSource.attr('src', audio_url);
+        try {
+            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
+            if (!response.ok) throw new Error('Song unavailable');
+        } catch {
+            elements.status.text('Error: Song unavailable. Skipping...');
+            playNextSong();
+            return;
+        }
+
+        state.currentSongId = songId;
+        elements.audioSource.attr('src', audioUrl);
         elements.playerName.text(song.name);
         elements.playerAlbum.text(song.album || 'Unknown Album');
         elements.playerImage.attr('src', song.image);
         elements.audioPlayer.removeClass('hidden');
         document.title = `${song.name} - ${song.album || 'Unknown Album'}`;
 
-        const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        // Deduplicate history
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        const existingIndex = history.findIndex(s => s.id === song.id);
+        if (existingIndex !== -1) {
+            history.splice(existingIndex, 1);
+        }
         history.unshift(song);
-        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history.slice(0, 50)));
+        history = history.slice(0, 50);
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
 
         elements.player[0].load();
         elements.player[0].play().then(() => {
@@ -288,6 +334,7 @@ $(document).ready(function() {
         }).catch(error => {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song.');
+            playNextSong();
         });
 
         updateLikeButton();
@@ -363,9 +410,12 @@ $(document).ready(function() {
 
     // Queue Functions
     function addToPlayNext(song) {
-        state.playQueue.unshift(song);
-        savePlayQueue();
-        elements.status.text('Added to Play Next');
+        const songData = state.resultsObjects[song.id]?.track;
+        if (songData) {
+            state.playQueue.unshift(songData);
+            savePlayQueue();
+            elements.status.text('Added to Play Next');
+        }
     }
 
     function savePlayQueue() {
@@ -379,10 +429,10 @@ $(document).ready(function() {
     // Like Functions
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) return;
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         const song = state.resultsObjects[state.currentSongId]?.track;
         if (!song) return;
 
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         const index = likes.findIndex(s => s.id === song.id);
         if (index === -1) {
             likes.push(song);
@@ -423,7 +473,7 @@ $(document).ready(function() {
         Object.keys(playlists).forEach(name => {
             elements.playlistOptions.append(`
                 <li>
-                    <button class="add-to-playlist-btn w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded" data-name="${name}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${name}</button>
+                    <button class="add-to-playlist-btn w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-name="${name}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${name}</button>
                 </li>
             `);
         });
@@ -493,7 +543,7 @@ $(document).ready(function() {
         elements.downloadList.append(downloadItem);
         elements.mpLink.css({ backgroundColor: 'green', borderColor: 'green' });
         setTimeout(() => {
-            elements.mpLink.css({ backgroundColor: '#007bff', borderColor: '#007bff' });
+            elements.mpLink.css({ backgroundColor: '#1f2937', borderColor: 'transparent' });
         }, 1000);
 
         fetch(song.url)
@@ -510,10 +560,9 @@ $(document).ready(function() {
                 a.remove();
                 downloadItem.find('.track-status').text('Downloaded');
                 downloadItem.find('.track-size').text(`Size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
-
                 const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
                 offlineSongs.unshift(song);
-                localStorage.setItem(STORAGE_KEYS.OFFLINE, JSON.stringify(offlineSongs.slice(0, 50)));
+                localStorage.setItem(STORAGE_KEYS.OFFLINE, JSON.stringify(offlineSongs.slice(0, 100)));
             })
             .catch(error => {
                 downloadItem.find('.track-status').text(`Error: ${error.message}`);
@@ -524,57 +573,69 @@ $(document).ready(function() {
     // Render Functions
     function generateSongCard(song) {
         return `
-            <div class="song-container bg-gray-800 rounded-lg p-4 relative" data-song-id="${song.id}">
-                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-2 cursor-pointer play-btn" data-song-id="${song.id}">
-                <h3 class="text-sm font-bold truncate play-btn cursor-pointer" data-song-id="${song.id}">${song.name}</h3>
-                <p class="text-xs text-gray-400 truncate">${song.album}</p>
+            <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200" data-song-id="${song.id}">
+                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 cursor-pointer play-btn" data-song-id="${song.id}">
+                <h3 class="text-sm font-semibold mb-1 truncate cursor-pointer play-btn" data-song-id="${song.id}">${song.name}</h3>
+                <p class="text-xs text-gray-400 truncate mb-1">${song.album || '-'}</p>
                 <p class="text-xs text-gray-400 truncate">${song.artist}</p>
-                <p class="text-xs text-gray-400">${song.duration} | ${song.year}</p>
+                <p class="text-xs text-gray-500">${song.duration} | ${song.year || '-'}</p>
                 <div class="three-dot-menu absolute top-2 right-2 z-20">
-                    <button class="three-dot-btn text-white"><i class="fa fa-ellipsis-v"></i></button>
-                    <div class="three-dot-dropdown hidden absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg p-2 w-36 z-30">
-                        <button class="like-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded" data-id="${song.id}"><i class="fa fa-heart mr-1"></i>${isLiked(song.id) ? 'Unlike' : 'Like'}</button>
-                        <button class="playlist-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}')><i class="fa fa-plus mr-1"></i>Add to Playlist</button>
-                        <button class="play-next-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}')><i class="fa fa-step-forward mr-1"></i>Play Next</button>
-                        <button class="download-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded" data-id="${song.id}"><i class="fa fa-download mr-1"></i>Download</button>
+                    <button class="three-dot-btn text-white hover:bg-gray-600 rounded-full p-1 transition duration-150"><i class="fa fa-ellipsis-v"></i></button>
+                    <div class="three-dot-dropdown hidden absolute right-0 mt-2 bg-gray-600 rounded-lg shadow-lg p-2 w-36 z-30">
+                        <button class="like-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-id="${song.id}"><i class="fa fa-heart mr-1"></i>${isLiked(song.id) ? 'Unlike' : 'Like'}</button>
+                        <button class="playlist-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'><i class="fa fa-plus mr-1"></i>Add to Playlist</button>
+                        <button class="play-next-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'><i class="fa fa-step-forward mr-1"></i>Play Next</button>
+                        <button class="download-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-id="${song.id}"><i class="fa fa-download mr-1"></i>Download</button>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    function loadHomeContent() {
+    async function loadHomeContent() {
         const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-        const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+
+        // Validate history URLs
+        const validHistory = [];
+        for (const song of history) {
+            try {
+                const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
+                if (response.ok) validHistory.push(song);
+            } catch {
+                // Skip invalid URLs
+            }
+        }
+        history = validHistory.slice(0, 8);
 
         elements.homeContent.html(`
-            <h2 class="text-lg font-bold mb-3 text-center sm:text-left">Recently Played</h2>
+            <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                ${history.length ? history.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
+                ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
-            <h2 class="text-lg font-bold mb-3 text-center sm:text-left">Liked Songs</h2>
+            <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 ${likes.length ? likes.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
-            <h2 class="text-lg font-bold mb-3 text-center sm:text-left">Offline Songs</h2>
+            <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Offline Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
-            <h2 class="text-lg font-bold mb-3 text-center sm:text-left">Playlists</h2>
+            <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
             <div class="space-y-4">
-                ${Object.keys(playlists).length ? Object.keys(playlists).map(name => `
+                ${Object.keys(playlists).map(name => `
                     <div class="mb-4">
                         <div class="flex justify-between mb-2">
-                            <h3 class="text-base font-bold truncate">${name}</h3>
-                            <button class="text-red-500 hover:text-red-600 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
+                            <h3 class="text-base font-semibold truncate">${name}</h3>
+                            <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             ${playlists[name].length ? playlists[name].slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
                         </div>
                     </div>
-                `).join('') : '<p class="text-center text-sm text-gray-400">No playlists.</p>'}
+                `).join('') || '<p class="text-center text-sm text-gray-400">No playlists.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -601,8 +662,8 @@ $(document).ready(function() {
             elements.playlistsList.append(`
                 <div class="mb-4">
                     <div class="flex justify-between mb-2">
-                        <h3 class="text-base font-bold truncate">${name}</h3>
-                        <button class="text-red-500 hover:text-red-600 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
+                        <h3 class="text-base font-semibold truncate">${name}</h3>
+                        <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         ${playlists[name].length ? playlists[name].map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
@@ -617,7 +678,7 @@ $(document).ready(function() {
         const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
         elements.offlineList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
+                ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -654,7 +715,7 @@ $(document).ready(function() {
                 elements.status.text('Song unliked');
             }
             localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
-            $(this).find('i').toggleClass('fa-heart-o', index !== -1).toggleClass('fa-heart', index === -1);
+            $(this).find('i').toggleClass('fa-heart fa-heart-o');
             $(this).text(`${index === -1 ? 'Unlike' : 'Like'}`);
             if ($('#likes-tab').is(':visible')) {
                 renderLikes();
