@@ -32,7 +32,11 @@
     border-radius: 9999px;
     background-color: #1f2937;
     color: #2dd4bf;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.float-button:active {
+    transform: scale(0.95);
 }
 
 .float-button:hover {
@@ -62,7 +66,7 @@
     background-color: #1f2937;
     padding: 24px;
     width: 91.666667%;
-    max-width: 448px;
+    max-width: 500px;
     border-radius: 8px;
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease-in-out;
@@ -124,9 +128,11 @@
 .font-arial { font-family: Arial, sans-serif; }
 .font-times { font-family: 'Times New Roman', Times, serif; }
 
+.font-xsmall { font-size: 0.75rem; line-height: 1rem; }
 .font-small { font-size: 0.875rem; line-height: 1.25rem; }
 .font-medium { font-size: 1rem; line-height: 1.5rem; }
 .font-large { font-size: 1.125rem; line-height: 1.75rem; }
+.font-xlarge { font-size: 1.25rem; line-height: 1.875rem; }
 
 .transparent-on {
     background-color: rgba(31, 41, 55, 0.5);
@@ -136,9 +142,15 @@
     background-color: rgba(31, 41, 55, 1);
 }
 
+.song-transparent {
+    background-color: rgba(31, 41, 55, 0.5) !important;
+}
+
 .progress-bar-teal { background-color: #2dd4bf; }
 .progress-bar-red { background-color: #ef4444; }
 .progress-bar-blue { background-color: #3b82f6; }
+.progress-bar-purple { background-color: #a855f7; }
+.progress-bar-pink { background-color: #ec4899; }
 
 .progress-bar-simple {
     background-image: none;
@@ -148,17 +160,103 @@
     background-image: linear-gradient(to right, #2dd4bf, #3b82f6);
 }
 
+.progress-bar-wave {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #ff6b6b);
+    background-size: 200% 100%;
+    animation: waveAnimation 2s linear infinite;
+}
+
+@keyframes waveAnimation {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
 .song-container {
     background-color: #1f2937;
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
 }
 
 .song-container:hover {
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
     transform: translateY(-2px);
+}
+
+.tab-btn {
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.tab-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.accent-teal {
+    color: #2dd4bf;
+}
+
+.accent-teal:hover {
+    color: #5eead4;
+}
+
+.accent-purple {
+    color: #a855f7;
+}
+
+.accent-purple:hover {
+    color: #c084fc;
+}
+
+.accent-pink {
+    color: #ec4899;
+}
+
+.accent-pink:hover {
+    color: #f472b6;
+}
+
+nav {
+    background: linear-gradient(to right, #1f2937, #374151);
+}
+
+.setting-card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.setting-card:hover {
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+select {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select:hover {
+    background-color: #4b5563;
+    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3);
+}
+
+.animation-fast {
+    transition-duration: 0.1s;
+}
+
+.animation-normal {
+    transition-duration: 0.3s;
+}
+
+.animation-slow {
+    transition-duration: 0.5s;
 }
 
 @media (max-width: 640px) {
@@ -170,21 +268,28 @@
         width: 95%;
         max-width: 95%;
     }
+    #player-detailed {
+        flex-direction: column;
+        gap: 10px;
+    }
+    #player-minimal .max-w-\[150px\] {
+        max-width: 100px;
+    }
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
     .song-container {
         width: calc(50% - 1rem);
+        min-width: 180px;
     }
 }
 
 @media (min-width: 1024px) {
     .song-container {
-        width: calc(25% - 1rem);
+        width: calc(20% - 1rem);
+        min-width: 200px;
     }
-}
-
-.developer-card:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
-    background-color: #374151;
+    #audio-player {
+        padding: 0 10%;
+    }
 }

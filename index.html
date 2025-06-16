@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Discover ViTune, your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs by artists like Honey Singh and dive into music with a sleek, modern interface. Start listening now!">
     <title>ViTune</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
@@ -23,7 +24,7 @@
                 <div class="float-button" id="mpopupLink">
                     <i class="fa fa-download text-lg"></i>
                 </div>
-                <a href="settings.html" class="text-teal-500 hover:text-teal-300"><i class="fa fa-cog text-lg"></i></a>
+                <a href="settings.html" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-cog text-lg"></i></a>
             </div>
         </div>
     </nav>
@@ -75,29 +76,39 @@
     <!-- Audio Player -->
     <div id="audio-player" class="fixed bottom-0 left-0 right-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg hidden z-40">
         <div class="container mx-auto px-4 py-2">
-            <div class="flex items-center justify-between">
+            <div id="player-minimal" class="flex items-center justify-between cursor-pointer">
                 <div class="flex items-center space-x-3">
                     <img id="player-image" src="img/logo.png" alt="Song Image" class="w-10 h-10 object-cover rounded-lg">
-                    <div>
-                        <h3 id="player-name" class="text-sm font-bold truncate max-w-[150px]">No song playing</h3>
-                        <p id="player-album" class="text-xs text-gray-400 truncate max-w-[150px]">Unknown Album</p>
-                    </div>
+                    <h3 id="player-name" class="text-sm font-bold truncate max-w-[150px]">No song playing</h3>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button id="prev-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-step-backward"></i></button>
-                    <button id="play-pause-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-play"></i></button>
-                    <button id="next-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-step-forward"></i></button>
-                    <button id="loop-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-repeat"></i></button>
-                    <button id="like-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-heart-o"></i></button>
-                    <button id="playlist-btn" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-plus"></i></button>
+                    <button id="play-pause-btn" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-play"></i></button>
+                    <button id="next-btn-minimal" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-step-forward"></i></button>
                 </div>
             </div>
-            <div id="progress-container" class="w-full h-1 bg-gray-700 rounded-full mt-2 cursor-pointer">
-                <div id="progress-bar" class="h-full bg-teal-500 rounded-full transition-all duration-200"></div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-400 mt-1">
-                <span id="current-time">0:00</span>
-                <span id="duration">0:00</span>
+            <div id="player-detailed" class="hidden">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img id="player-image-detailed" src="img/logo.png" alt="Song Image" class="w-10 h-10 object-cover rounded-lg">
+                        <div>
+                            <h3 id="player-name-detailed" class="text-sm font-bold truncate max-w-[150px]">No song playing</h3>
+                            <p id="player-album" class="text-xs text-gray-400 truncate max-w-[150px]">Unknown Album</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button id="prev-btn" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-step-backward"></i></button>
+                        <button id="loop-btn" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-repeat"></i></button>
+                        <button id="like-btn" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-heart-o"></i></button>
+                        <button id="playlist-btn" class="text-teal-500 hover:text-teal-300 control-btn accent-teal transition duration-200"><i class="fa fa-plus"></i></button>
+                    </div>
+                </div>
+                <div id="progress-container" class="w-full h-1 bg-gray-700 rounded-full mt-2 cursor-pointer">
+                    <div id="progress-bar" class="h-full bg-teal-500 rounded-full transition-all duration-200"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span id="current-time">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
             </div>
         </div>
         <audio id="player" preload="auto">

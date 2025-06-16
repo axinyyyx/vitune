@@ -15,7 +15,7 @@
     <!-- Navbar -->
     <nav class="sticky top-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
+            <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 accent-teal transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
             <div class="flex items-center space-x-2">
                 <img src="img/logo.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
                 <h1 class="text-xl font-bold">ViTune Settings</h1>
@@ -25,26 +25,32 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-6">
-        <h1 class="text-2xl font-bold mb-6">Settings</h1>
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Appearance</h2>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Theme</label>
-                <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
                     <option value="dark">Dark</option>
                     <option value="light-mode">Light</option>
                 </select>
             </div>
             <div class="mb-3">
-                <label class="block text-sm mb-1">Transparent Effect</label>
-                <select id="transparent-effect" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                <label class="block text-sm mb-1">Song Card Transparency</label>
+                <select id="song-card-transparency" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Transparent Effect (Player)</label>
+                <select id="transparent-effect" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
                     <option value="off">Off</option>
                     <option value="on">On</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Font Style</label>
-                <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
                     <option value="poppins">Poppins</option>
                     <option value="roboto">Roboto</option>
                     <option value="open-sans">Open Sans</option>
@@ -56,59 +62,91 @@
             </div>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Font Size</label>
-                <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="xsmall">Extra Small</option>
                     <option value="small">Small</option>
                     <option value="medium">Medium</option>
                     <option value="large">Large</option>
+                    <option value="xlarge">Extra Large</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Accent Color</label>
+                <select id="accent-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="teal">Teal</option>
+                    <option value="purple">Purple</option>
+                    <option value="pink">Pink</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Animation Speed</label>
+                <select id="animation-speed" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="fast">Fast</option>
+                    <option value="normal">Normal</option>
+                    <option value="slow">Slow</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Playback</h2>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Progress Bar Color</label>
+                <select id="progress-bar-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="teal">Teal</option>
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                    <option value="purple">Purple</option>
+                    <option value="pink">Pink</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Progress Bar Style</label>
-                <select id="progress-bar-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                <select id="progress-bar-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
                     <option value="simple">Simple</option>
                     <option value="gradient">Gradient</option>
+                    <option value="wave">Wave</option>
                 </select>
             </div>
             <div class="mb-3">
-                <label class="block text-sm mb-1">Progress Bar Color</label>
-                <select id="progress-bar-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
-                    <option value="teal">Teal</option>
-                    <option value="red">Red</option>
-                    <option value="blue">Blue</option>
-                </select>
-            </div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
-            <h2 class="text-lg font-semibold mb-3">Audio Settings</h2>
-            <div class="mb-3">
-                <label class="block text-sm mb-1">Audio Quality</label>
-                <select id="ViTune-bitrate" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
-                    <option value="4" selected>320kbps</option>
-                    <option value="3">160kbps</option>
-                    <option value="2">96kbps</option>
+                <label class="block text-sm mb-1">Bitrate</label>
+                <select id="bitrate" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
                     <option value="1">48kbps</option>
+                    <option value="2">96kbps</option>
+                    <option value="3">160kbps</option>
+                    <option value="4">320kbps</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label class="block text-sm mb-1">Mood Filter</label>
-                <select id="mood-filter" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
-                    <option value="off">Mood Off (Upbeat Songs Only)</option>
-                    <option value="all">All Songs</option>
+                <select id="mood-filter" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="off">Off</option>
+                    <option value="happy">Happy</option>
+                    <option value="sad">Sad</option>
+                    <option value="energetic">Energetic</option>
+                    <option value="relaxed">Relaxed</option>
                 </select>
             </div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
-            <h2 class="text-lg font-semibold mb-3">Data Management</h2>
-            <button id="clear-data-btn" class="bg-red-500 text-white rounded-full py-1 px-3 text-sm hover:bg-red-600 transition duration-200"><i class="fa fa-trash mr-1"></i>Clear All Data</button>
+
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Reset Settings</h2>
+            <button id="reset-settings" class="bg-red-500 text-white rounded-full py-2 px-4 hover:bg-red-600 text-sm transition duration-200">Reset to Default</button>
         </div>
-        <div class="bg-gray-800 rounded-lg p-6 mb-4 transition-all duration-200 developer-card">
-            <h2 class="text-lg font-semibold mb-4">About Developer</h2>
+
+        <div class="bg-gray-800 rounded-lg p-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">About Developer</h2>
             <div class="flex items-center space-x-4">
-                <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-16 h-16 rounded-full object-cover">
+                <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-20 h-20 rounded-full object-cover shadow-md">
                 <div>
-                    <h3 class="text-base font-bold">Rishabh Kumar</h3>
-                    <p class="text-sm text-gray-400">Crafted with passion since June 15, 2025</p>
-                    <a href="https://instagram.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-instagram mr-1"></i>@rishabhsahill</a>
+                    <h3 class="text-lg font-bold text-teal-300">Rishabh Kumar</h3>
+                    <p class="text-sm text-gray-400">Developed with passion since June 16, 2025</p>
+                    <div class="flex space-x-2 mt-1">
+                        <a href="https://github.com/axinyyyx" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-github"></i></a>
+                        <a href="https://www.instagram.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-instagram"></i></a>
+                        <a href="https://x.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-twitter"></i></a>
+                        <a href="https://www.facebook.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-facebook"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -117,60 +155,60 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Load Settings
-            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
-            $('#theme-style').val(settings.theme || 'dark');
-            $('#transparent-effect').val(settings.transparentEffect || 'off');
-            $('#font-style').val(settings.fontStyle || 'poppins');
-            $('#font-size').val(settings.fontSize || 'medium');
-            $('#progress-bar-style').val(settings.progressBarStyle || 'simple');
-            $('#progress-bar-color').val(settings.progressBarColor || 'teal');
-            $('#ViTune-bitrate').val(settings.bitrate || '4');
-            $('#mood-filter').val(settings.moodFilter || 'off');
+            const STORAGE_KEYS = { SETTINGS: 'settings' };
+            const defaultSettings = {
+                theme: 'dark',
+                songCardTransparency: 'off',
+                transparentEffect: 'off',
+                fontStyle: 'poppins',
+                fontSize: 'medium',
+                progressBarColor: 'teal',
+                progressBarStyle: 'simple',
+                bitrate: '4',
+                moodFilter: 'off',
+                accentColor: 'teal',
+                animationSpeed: 'normal'
+            };
 
-            // Apply Settings
-            function applySettings() {
-                $('body').removeClass('dark light-mode font-poppins font-roboto font-open-sans font-lato font-montserrat font-arial font-times font-small font-medium font-large transparent-on transparent-off');
-                $('body').addClass($('#theme-style').val());
-                $('body').addClass(`font-${$('#font-style').val()}`);
-                $('body').addClass(`font-${$('#font-size').val()}`);
-                $('body').addClass(`transparent-${$('#transparent-effect').val()}`);
-                $('#audio-player, #mpopupBox .modal-content, #playlist-modal .bg-gray-800').css('background-color', $('#transparent-effect').val() === 'on' ? 'rgba(31, 41, 55, 0.5)' : 'rgba(31, 41, 55, 1)');
-                $('#progress-bar').removeClass('progress-bar-teal progress-bar-red progress-bar-blue progress-bar-simple progress-bar-gradient');
-                $('#progress-bar').addClass(`progress-bar-${$('#progress-bar-color').val()}`);
-                $('#progress-bar').addClass(`progress-bar-${$('#progress-bar-style').val()}`);
-                $(window).trigger('settings:updated');
-            }
-            applySettings();
+            // Load settings
+            const settings = { ...defaultSettings, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}') };
+            $('#theme-style').val(settings.theme);
+            $('#song-card-transparency').val(settings.songCardTransparency);
+            $('#transparent-effect').val(settings.transparentEffect);
+            $('#font-style').val(settings.fontStyle);
+            $('#font-size').val(settings.fontSize);
+            $('#progress-bar-color').val(settings.progressBarColor);
+            $('#progress-bar-style').val(settings.progressBarStyle);
+            $('#bitrate').val(settings.bitrate);
+            $('#mood-filter').val(settings.moodFilter);
+            $('#accent-color').val(settings.accentColor);
+            $('#animation-speed').val(settings.animationSpeed);
 
-            // Save Settings
-            $('#theme-style, #transparent-effect, #font-style, #font-size, #progress-bar-style, #progress-bar-color, #ViTune-bitrate, #mood-filter').on('change', function() {
-                const settings = {
+            // Save settings on change
+            $('select').on('change', function() {
+                const newSettings = {
                     theme: $('#theme-style').val(),
+                    songCardTransparency: $('#song-card-transparency').val(),
                     transparentEffect: $('#transparent-effect').val(),
                     fontStyle: $('#font-style').val(),
                     fontSize: $('#font-size').val(),
-                    progressBarStyle: $('#progress-bar-style').val(),
                     progressBarColor: $('#progress-bar-color').val(),
-                    bitrate: $('#ViTune-bitrate').val(),
-                    moodFilter: $('#mood-filter').val()
+                    progressBarStyle: $('#progress-bar-style').val(),
+                    bitrate: $('#bitrate').val(),
+                    moodFilter: $('#mood-filter').val(),
+                    accentColor: $('#accent-color').val(),
+                    animationSpeed: $('#animation-speed').val()
                 };
-                localStorage.setItem('settings', JSON.stringify(settings));
-                applySettings();
-                if (this.id === 'ViTune-bitrate') {
-                    const lastSearch = window.location.hash.substring(1);
-                    if (lastSearch) {
-                        $(document).trigger('ViTune:search', [decodeURIComponent(lastSearch)]);
-                    }
-                }
+                localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
+                $(window).trigger('settings:updated');
             });
 
-            // Clear Data
-            $('#clear-data-btn').on('click', function() {
-                if (confirm('Are you sure you want to clear all data? This will remove likes, playlists, offline songs, history, and settings.')) {
-                    localStorage.clear();
-                    alert('All data cleared successfully!');
-                    window.location.reload();
+            // Reset settings
+            $('#reset-settings').on('click', function() {
+                if (confirm('Reset all settings to default?')) {
+                    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
+                    $(window).trigger('settings:updated');
+                    location.reload();
                 }
             });
         });

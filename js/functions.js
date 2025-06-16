@@ -8,12 +8,17 @@ $(document).ready(function() {
         player: $('#player'),
         audioSource: $('#audio-source'),
         playerName: $('#player-name'),
+        playerNameD: $('#player-name-detailed'),
         playerAlbum: $('#player-album'),
         playerImage: $('#player-image'),
+        playerImageD: $('#player-image-detailed'),
         audioPlayer: $('#audio-player'),
+        playerMinimal: $('#player-minimal'),
+        playerDetailed: $('#player-detailed'),
         playPauseBtn: $('#play-pause-btn'),
         prevBtn: $('#prev-btn'),
         nextBtn: $('#next-btn'),
+        nextBtnMinimal: $('#next-btn-minimal'),
         loopBtn: $('#loop-btn'),
         likeBtn: $('#like-btn'),
         playlistBtn: $('#playlist-btn'),
@@ -34,7 +39,8 @@ $(document).ready(function() {
         loadMoreBtn: $('#loadmore'),
         mpopup: $('#mpopupBox'),
         mpLink: $('#mpopupLink'),
-        downloadList: $('#download-list')
+        downloadList: $('#download-list'),
+        settingsLink: $('#settings-link')
     };
 
     // State
@@ -45,7 +51,9 @@ $(document).ready(function() {
         resultsObjects: {},
         playQueue: [],
         isLooping: false,
-        isPlaying: false
+        isPlaying: false,
+        isDetailedView: false,
+        allowNavigation: false
     };
 
     const STORAGE_KEYS = {
@@ -58,7 +66,7 @@ $(document).ready(function() {
     };
 
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
-    const API_TIMEOUT = 10000; // 10 seconds
+    const API_TIMEOUT = 10000;
 
     // Debounce Function
     function debounce(func, wait) {
@@ -82,10 +90,32 @@ $(document).ready(function() {
         handleDirectURL();
         setupAutoPlay();
         loadPlayQueue();
-        elements.mpopup.find('.close').on('click', () => elements.mpopup.hide());
-        elements.mpLink.on('click', () => elements.mpopup.toggleClass('hidden'));
-        $(window).on('click', (e) => {
+        elements.mpopup.find('.close').off('click').on('click', () => elements.mpopup.addClass('hidden'));
+        elements.mpLink.off('click').on('click', () => {
+            console.log('Download popup toggled');
+            elements.mpopup.toggleClass('hidden');
+        });
+        $(window).off('click').on('click', (e) => {
             if (e.target === elements.mpopup[0]) elements.mpopup.addClass('hidden');
+        });
+        disableRefreshAndZoom();
+    }
+
+    // Disable Refresh and Zoom
+    function disableRefreshAndZoom() {
+        $(document).on('keydown', (e) => {
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                elements.status.text('Refresh disabled.');
+            }
+        });
+        window.onbeforeunload = (e) => {
+            if (state.allowNavigation) return;
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        $(document).on('gesturestart wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) e.preventDefault();
         });
     }
 
@@ -101,75 +131,196 @@ $(document).ready(function() {
                 // Skip invalid URLs
             }
         }
-        history = validHistory.slice(0, 50);
-        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(validHistory.slice(0, 50)));
     }
 
     // Apply Settings
     function applySettings() {
-        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
-        $('body').removeClass('dark light-mode font-poppins font-roboto font-open-sans font-lato font-montserrat font-arial font-times font-small font-medium font-large transparent-on transparent-off');
-        $('body').addClass(settings.theme || 'dark');
-        $('body').addClass(`font-${settings.fontStyle || 'poppins'}`);
-        $('body').addClass(`font-${settings.fontSize || 'medium'}`);
-        $('body').addClass(`transparent-${settings.transparentEffect || 'off'}`);
+        const defaultSettings = {
+            theme: 'dark',
+            songCardTransparency: 'off',
+            transparentEffect: 'off',
+            fontStyle: 'poppins',
+            fontSize: 'medium',
+            progressBarColor: 'teal',
+            progressBarStyle: 'simple',
+            bitrate: '4',
+            moodFilter: 'off',
+            accentColor: 'teal',
+            animationSpeed: 'normal'
+        };
+        const settings = { ...defaultSettings, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}') };
+        $('body').removeClass('dark light-mode font-poppins font-roboto font-open-sans font-lato font-montserrat font-arial font-times font-xsmall font-small font-medium font-large font-xlarge transparent-on transparent-off animation-fast animation-normal animation-slow');
+        $('body').addClass(settings.theme);
+        $('body').addClass(`font-${settings.fontStyle}`);
+        $('body').addClass(`font-${settings.fontSize}`);
+        $('body').addClass(`transparent-${settings.transparentEffect}`);
+        $('body').addClass(`animation-${settings.animationSpeed}`);
         $('#audio-player, #mpopupBox .modal-content, #playlist-modal .bg-gray-800').css('background-color', settings.transparentEffect === 'on' ? 'rgba(31, 41, 55, 0.5)' : 'rgba(31, 41, 55, 1)');
-        elements.progressBar.removeClass('progress-bar-teal progress-bar-red progress-bar-blue progress-bar-simple progress-bar-gradient');
-        elements.progressBar.addClass(`progress-bar-${settings.progressBarColor || 'teal'}`);
-        elements.progressBar.addClass(`progress-bar-${settings.progressBarStyle || 'simple'}`);
+        elements.progressBar.removeClass('progress-bar-teal progress-bar-red progress-bar-blue progress-bar-purple progress-bar-pink progress-bar-simple progress-bar-gradient progress-bar-wave');
+        elements.progressBar.addClass(`progress-bar-${settings.progressBarColor}`);
+        elements.progressBar.addClass(`progress-bar-${settings.progressBarStyle}`);
+        $('.float-button, .tab-btn.active, #loadmore, #create-playlist-btn, #create-playlist-btn-modal, .control-btn, .three-dot-btn, .add-to-playlist-btn, .remove-from-playlist-btn, a:not(.delete-playlist-btn)').removeClass('accent-teal accent-purple accent-pink bg-teal-500 bg-purple-500 bg-pink-500 text-teal-500 text-purple-500 text-pink-500 hover:bg-teal-600 hover:bg-purple-600 hover:bg-pink-600 hover:text-teal-300 hover:text-purple-300 hover:text-pink-300');
+        $('.float-button, .tab-btn.active, #loadmore, #create-playlist-btn, #create-playlist-btn-modal').addClass(`bg-${settings.accentColor}-500 hover:bg-${settings.accentColor}-600`);
+        $('.control-btn, .three-dot-btn, .add-to-playlist-btn, .remove-from-playlist-btn, a:not(.delete-playlist-btn)').addClass(`text-${settings.accentColor}-500 hover:text-${settings.accentColor}-300 accent-${settings.accentColor}`);
+        if (settings.songCardTransparency === 'on' && state.currentSongId) {
+            $('.song-container, #ViTune-results').addClass('song-transparent');
+        } else {
+            $('.song-container, #ViTune-results').removeClass('song-transparent');
+        }
     }
 
     // Event Listeners
     function bindEventListeners() {
         const debouncedSearch = debounce((query) => {
             if (query.length >= 2) {
+                console.log('Search triggered:', query);
                 doViTuneSearch(query.trim());
             }
         }, 300);
 
-        elements.searchBox.on('input', function() {
+        elements.searchBox.off('input').on('input', function() {
             const query = $(this).val().trim();
             elements.clearSearch.toggleClass('hidden', !query);
             debouncedSearch(query);
         });
 
-        elements.clearSearch.on('click', clearSearch);
-        elements.loadMoreBtn.on('click', nextPage);
-        elements.tabButtons.on('click', function() {
-            showTab($(this).data('tab'));
+        elements.clearSearch.off('click').on('click', () => {
+            console.log('Clear search clicked');
+            clearSearch();
         });
 
-        elements.playPauseBtn.on('click', togglePlayPause);
-        elements.prevBtn.on('click', playPreviousSong);
-        elements.nextBtn.on('click', playNextSong);
-        elements.loopBtn.on('click', toggleLoop);
-        elements.likeBtn.on('click', toggleLikeCurrentSong);
-        elements.playlistBtn.on('click', showPlaylistModalCurrentSong);
-        elements.closePlaylistModal.on('click', closePlaylistModal);
-        elements.createPlaylistBtn.on('click', createPlaylist);
-        elements.createPlaylistBtnModal.on('click', createPlaylist);
-        elements.progressContainer.on('click', seekSong);
+        elements.loadMoreBtn.off('click').on('click', () => {
+            console.log('Load more clicked');
+            nextPage();
+        });
 
-        elements.player.on('timeupdate', updateProgress);
-        elements.player.on('error', () => {
-            console.error('Playback error:', elements.audioSource.attr('src'));
-            elements.status.text('Error: Song unavailable. Skipping...');
+        elements.tabButtons.off('click').on('click', function() {
+            const tab = $(this).data('tab');
+            console.log('Tab clicked:', tab);
+            showTab(tab);
+        });
+
+        elements.playPauseBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Play/pause clicked');
+            togglePlayPause();
+        });
+
+        elements.nextBtnMinimal.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Next minimal clicked');
             playNextSong();
         });
 
-        $(document).on('ViTune:search', (e, query) => {
+        elements.playerMinimal.off('click').on('click', (e) => {
+            if (!$(e.target).closest('.control-btn').length) {
+                console.log('Minimal player clicked');
+                togglePlayerView();
+            }
+        });
+
+        elements.prevBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Previous clicked');
+            playPreviousSong();
+        });
+
+        elements.nextBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Next clicked');
+            playNextSong();
+        });
+
+        elements.loopBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Loop clicked');
+            toggleLoop();
+        });
+
+        elements.likeBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Like clicked');
+            toggleLikeCurrentSong();
+        });
+
+        elements.playlistBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Playlist button clicked');
+            showPlaylistModalCurrentSong();
+        });
+
+        elements.closePlaylistModal.off('click').on('click', () => {
+            console.log('Close playlist modal clicked');
+            closePlaylistModal();
+        });
+
+        elements.createPlaylistBtn.off('click').on('click', () => {
+            console.log('Create playlist clicked');
+            createPlaylist();
+        });
+
+        elements.createPlaylistBtnModal.off('click').on('click', () => {
+            console.log('Create playlist modal clicked');
+            createPlaylist();
+        });
+
+        elements.progressContainer.off('click').on('click', (e) => {
+            console.log('Progress bar clicked');
+            seekSong(e);
+        });
+
+        elements.player.off('timeupdate error ended').on({
+            timeupdate: updateProgress,
+            error: () => {
+                console.error('Playback error:', elements.audioSource.attr('src'));
+                elements.status.text('Error: Song unavailable. Skipping...');
+                playNextSong();
+            },
+            ended: () => {
+                console.log('Song ended');
+                playNextSong();
+            }
+        });
+
+        elements.settingsLink.off('click').on('click', (e) => {
+            console.log('Settings link clicked');
+            state.allowNavigation = true;
+            setTimeout(() => {
+                state.allowNavigation = false;
+            }, 100);
+        });
+
+        $(document).off('ViTune:search').on('ViTune:search', (e, query) => {
+            console.log('Custom search event:', query);
             doViTuneSearch(query);
         });
 
-        window.addEventListener('hashchange', () => {
-            const query = decodeURIComponent(window.location.hash.substring(1).replace(/%20/g, '+'));
-            if (query) doViTuneSearch(query);
-        });
+        window.removeEventListener('hashchange', handleHashChange);
+        window.addEventListener('hashchange', handleHashChange);
 
-        $(window).on('settings:updated storage', (e) => {
+        function handleHashChange() {
+            const query = decodeURIComponent(window.location.hash.substring(1));
+            if (query) {
+                console.log('Hash changed:', query);
+                elements.searchBox.val(query.replace(/\+/g, ' '));
+                doViTuneSearch(query);
+            }
+        }
+
+        $(window).off('settings:updated storage').on('settings:updated storage', (e) => {
             if (e.type === 'storage' && e.key !== STORAGE_KEYS.SETTINGS) return;
+            console.log('Settings updated');
             applySettings();
         });
+    }
+
+    // Toggle Player View
+    function togglePlayerView() {
+        state.isDetailedView = !state.isDetailedView;
+        elements.playerMinimal.toggleClass('hidden', state.isDetailedView);
+        elements.playerDetailed.toggleClass('hidden', !state.isDetailedView);
+        console.log('Player view toggled:', state.isDetailedView ? 'Detailed' : 'Minimal');
     }
 
     // Search Functions
@@ -187,9 +338,9 @@ $(document).ready(function() {
     }
 
     function handleDirectURL() {
-        const hash = window.location.hash.substring(1).replace(/%20/g, '+');
+        const hash = decodeURIComponent(window.location.hash.substring(1));
         if (hash) {
-            const query = decodeURIComponent(hash);
+            const query = hash.replace(/\+/g, ' ');
             elements.searchBox.val(query);
             doViTuneSearch(query, true);
             showTab('search');
@@ -200,6 +351,7 @@ $(document).ready(function() {
 
     async function doViTuneSearch(query, noScroll = false) {
         if (!query) return;
+        showTab('search');
         query = query.trim().replace(/\s+/g, ' ');
         const encodedQuery = encodeURIComponent(query.replace(/\s/g, '+'));
         window.location.hash = encodedQuery;
@@ -312,12 +464,20 @@ $(document).ready(function() {
         state.currentSongId = songId;
         elements.audioSource.attr('src', audioUrl);
         elements.playerName.text(song.name);
+        elements.playerNameD.text(song.name);
         elements.playerAlbum.text(song.album || 'Unknown Album');
         elements.playerImage.attr('src', song.image);
+        elements.playerImageD.attr('src', song.image);
         elements.audioPlayer.removeClass('hidden');
         document.title = `${song.name} - ${song.album || 'Unknown Album'}`;
 
-        // Deduplicate history
+        // Apply song card transparency
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        if (settings.songCardTransparency === 'on') {
+            $('.song-container, #ViTune-results').addClass('song-transparent');
+        }
+
+        // Update history
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
         const existingIndex = history.findIndex(s => s.id === song.id);
         if (existingIndex !== -1) {
@@ -331,6 +491,7 @@ $(document).ready(function() {
         elements.player[0].play().then(() => {
             state.isPlaying = true;
             elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
+            console.log('Playing song:', song.name);
         }).catch(error => {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song.');
@@ -339,6 +500,9 @@ $(document).ready(function() {
 
         updateLikeButton();
         savePlayQueue();
+        if ($('#home-tab').is(':visible')) {
+            loadHomeContent();
+        }
     }
 
     function togglePlayPause() {
@@ -346,10 +510,13 @@ $(document).ready(function() {
             elements.player[0].pause();
             elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
         } else {
-            elements.player[0].play();
+            elements.player[0].play().catch(() => {
+                elements.status.text('Error: Unable to play.');
+            });
             elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
         }
         state.isPlaying = !state.isPlaying;
+        console.log('Play state:', state.isPlaying);
     }
 
     function playNextSong() {
@@ -374,6 +541,7 @@ $(document).ready(function() {
                 }
             }
         }
+        console.log('Playing next song');
     }
 
     function playPreviousSong() {
@@ -386,11 +554,13 @@ $(document).ready(function() {
                 playAudio(prevSong.url, prevSongId);
             }
         }
+        console.log('Playing previous song');
     }
 
     function toggleLoop() {
         state.isLooping = !state.isLooping;
         elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
+        console.log('Loop state:', state.isLooping);
     }
 
     function updateProgress() {
@@ -406,15 +576,17 @@ $(document).ready(function() {
         const player = elements.player[0];
         const offset = e.offsetX / elements.progressContainer.width();
         player.currentTime = offset * player.duration;
+        console.log('Seek to:', player.currentTime);
     }
 
     // Queue Functions
     function addToPlayNext(song) {
-        const songData = state.resultsObjects[song.id]?.track;
+        const songData = state.resultsObjects[song.id]?.track || song;
         if (songData) {
             state.playQueue.unshift(songData);
             savePlayQueue();
             elements.status.text('Added to Play Next');
+            console.log('Added to play next:', songData.name);
         }
     }
 
@@ -428,7 +600,10 @@ $(document).ready(function() {
 
     // Like Functions
     function toggleLikeCurrentSong() {
-        if (!state.currentSongId) return;
+        if (!state.currentSongId) {
+            elements.status.text('No song selected.');
+            return;
+        }
         const song = state.resultsObjects[state.currentSongId]?.track;
         if (!song) return;
 
@@ -446,6 +621,7 @@ $(document).ready(function() {
         if ($('#likes-tab').is(':visible')) {
             renderLikes();
         }
+        console.log('Like toggled for:', song.name);
     }
 
     function updateLikeButton() {
@@ -461,19 +637,24 @@ $(document).ready(function() {
 
     // Playlist Functions
     function showPlaylistModalCurrentSong() {
-        if (!state.currentSongId) return;
+        if (!state.currentSongId) {
+            elements.status.text('No song selected.');
+            return;
+        }
         const song = state.resultsObjects[state.currentSongId]?.track;
         if (!song) return;
         showPlaylistModal(song);
+        console.log('Showing playlist modal for:', song.name);
     }
 
     function showPlaylistModal(song) {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         elements.playlistOptions.empty();
         Object.keys(playlists).forEach(name => {
+            const isInPlaylist = playlists[name].some(s => s.id === song.id);
             elements.playlistOptions.append(`
                 <li>
-                    <button class="add-to-playlist-btn w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-name="${name}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${name}</button>
+                    <button class="${isInPlaylist ? 'remove-from-playlist-btn' : 'add-to-playlist-btn'} w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-name="${name}" data-song-id="${song.id}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${isInPlaylist ? '<i class="fa fa-minus mr-1"></i>Remove from' : '<i class="fa fa-plus mr-1"></i>Add to'} ${name}</button>
                 </li>
             `);
         });
@@ -483,11 +664,20 @@ $(document).ready(function() {
             const songData = JSON.parse($(this).attr('data-song'));
             addToPlaylist(playlistName, songData);
             closePlaylistModal();
+            console.log('Added to playlist:', playlistName);
+        });
+        $('.remove-from-playlist-btn').off('click').on('click', function() {
+            const playlistName = $(this).data('name');
+            const songId = $(this).data('song-id');
+            removeFromPlaylist(playlistName, songId);
+            closePlaylistModal();
+            console.log('Removed from playlist:', playlistName);
         });
     }
 
     function closePlaylistModal() {
         elements.playlistModal.addClass('hidden');
+        console.log('Playlist modal closed');
     }
 
     function createPlaylist() {
@@ -502,6 +692,7 @@ $(document).ready(function() {
         localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
         renderPlaylists();
         elements.status.text(`Playlist "${name}" created`);
+        console.log('Playlist created:', name);
     }
 
     function addToPlaylist(playlistName, song) {
@@ -514,6 +705,20 @@ $(document).ready(function() {
             if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
             }
+            console.log('Song added to playlist:', song.name, playlistName);
+        }
+    }
+
+    function removeFromPlaylist(playlistName, songId) {
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        if (playlists[playlistName]) {
+            playlists[playlistName] = playlists[playlistName].filter(s => s.id !== songId);
+            localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+            elements.status.text(`Removed from "${playlistName}"`);
+            if ($('#playlists-tab').is(':visible')) {
+                renderPlaylists();
+            }
+            console.log('Song removed from playlist:', songId, playlistName);
         }
     }
 
@@ -522,6 +727,7 @@ $(document).ready(function() {
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
             console.error('Song not found for download:', songId);
+            elements.status.text('Error: Song not found.');
             return;
         }
 
@@ -563,9 +769,11 @@ $(document).ready(function() {
                 const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
                 offlineSongs.unshift(song);
                 localStorage.setItem(STORAGE_KEYS.OFFLINE, JSON.stringify(offlineSongs.slice(0, 100)));
+                console.log('Downloaded:', song.name);
             })
             .catch(error => {
                 downloadItem.find('.track-status').text(`Error: ${error.message}`);
+                elements.status.text('Download failed.');
                 console.error('Download error:', error);
             });
     }
@@ -573,12 +781,12 @@ $(document).ready(function() {
     // Render Functions
     function generateSongCard(song) {
         return `
-            <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200" data-song-id="${song.id}">
-                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 cursor-pointer play-btn" data-song-id="${song.id}">
-                <h3 class="text-sm font-semibold mb-1 truncate cursor-pointer play-btn" data-song-id="${song.id}">${song.name}</h3>
-                <p class="text-xs text-gray-400 truncate mb-1">${song.album || '-'}</p>
-                <p class="text-xs text-gray-400 truncate">${song.artist}</p>
-                <p class="text-xs text-gray-500">${song.duration} | ${song.year || '-'}</p>
+            <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 play-btn" data-song-id="${song.id}">
+                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
+                <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
+                <p class="text-xs text-gray-400 truncate mb-1 play-btn" data-song-id="${song.id}">${song.album || '-'}</p>
+                <p class="text-xs text-gray-400 truncate play-btn" data-song-id="${song.id}">${song.artist}</p>
+                <p class="text-xs text-gray-500 play-btn" data-song-id="${song.id}">${song.duration} | ${song.year || '-'}</p>
                 <div class="three-dot-menu absolute top-2 right-2 z-20">
                     <button class="three-dot-btn text-white hover:bg-gray-600 rounded-full p-1 transition duration-150"><i class="fa fa-ellipsis-v"></i></button>
                     <div class="three-dot-dropdown hidden absolute right-0 mt-2 bg-gray-600 rounded-lg shadow-lg p-2 w-36 z-30">
@@ -603,7 +811,10 @@ $(document).ready(function() {
         for (const song of history) {
             try {
                 const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
-                if (response.ok) validHistory.push(song);
+                if (response.ok) {
+                    validHistory.push(song);
+                    state.resultsObjects[song.id] = { track: song };
+                }
             } catch {
                 // Skip invalid URLs
             }
@@ -612,15 +823,15 @@ $(document).ready(function() {
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 ${likes.length ? likes.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Offline Songs</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
@@ -631,7 +842,7 @@ $(document).ready(function() {
                             <h3 class="text-base font-semibold truncate">${name}</h3>
                             <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                             ${playlists[name].length ? playlists[name].slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
                         </div>
                     </div>
@@ -639,16 +850,18 @@ $(document).ready(function() {
             </div>
         `);
         bindCardEventListeners();
+        console.log('Home content loaded');
     }
 
     function renderLikes() {
         const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         elements.likesList.html(`
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 ${likes.length ? likes.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
+        console.log('Likes rendered');
     }
 
     function renderPlaylists() {
@@ -665,138 +878,159 @@ $(document).ready(function() {
                         <h3 class="text-base font-semibold truncate">${name}</h3>
                         <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         ${playlists[name].length ? playlists[name].map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
                     </div>
                 </div>
             `);
         });
         bindCardEventListeners();
+        console.log('Playlists rendered');
     }
 
     function renderOffline() {
         const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
         elements.offlineList.html(`
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
+        console.log('Offline songs rendered');
     }
 
     // Event Binding for Cards
     function bindCardEventListeners() {
-        $('.play-btn').off('click').on('click', function() {
-            const songId = $(this).data('song-id');
+        const debouncedPlay = debounce((songId) => {
+            console.log('Play button clicked:', songId);
             const song = state.resultsObjects[songId]?.track;
             if (song) {
                 playAudio(song.url, songId);
+            } else {
+                elements.status.text('Error: Song not found.');
             }
+        }, 200);
+
+        $('.play-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const songId = $(this).data('song-id');
+            debouncedPlay(songId);
         });
 
         $('.three-dot-btn').off('click').on('click', function(e) {
             e.stopPropagation();
+            console.log('Three-dot menu clicked');
             const dropdown = $(this).siblings('.three-dot-dropdown');
             $('.three-dot-dropdown').not(dropdown).addClass('hidden');
             dropdown.toggleClass('hidden');
         });
 
-        $('.like-btn').off('click').on('click', function() {
+        $('.like-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
             const songId = $(this).data('id');
+            console.log('Like button clicked:', songId);
             const song = state.resultsObjects[songId]?.track;
-            if (!song) return;
+            if (!song) {
+                elements.status.text('Error: Song not found.');
+                return;
+            }
             const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
             const index = likes.findIndex(s => s.id === songId);
             if (index === -1) {
                 likes.push(song);
                 elements.status.text('Song liked');
+                $(this).html('<i class="fa fa-heart mr-1"></i>Unlike');
             } else {
                 likes.splice(index, 1);
                 elements.status.text('Song unliked');
+                $(this).html('<i class="fa fa-heart mr-1"></i>Like');
             }
             localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
-            $(this).find('i').toggleClass('fa-heart fa-heart-o');
-            $(this).text(`${index === -1 ? 'Unlike' : 'Like'}`);
             if ($('#likes-tab').is(':visible')) {
                 renderLikes();
             }
-            updateLikeButton();
-        });
-
-        $('.playlist-btn').off('click').on('click', function() {
-            const song = JSON.parse($(this).attr('data-song'));
-            showPlaylistModal(song);
-        });
-
-        $('.play-next-btn').off('click').on('click', function() {
-            const song = JSON.parse($(this).attr('data-song'));
-            addToPlayNext(song);
-        });
-
-        $('.download-btn').off('click').on('click', function() {
-            const songId = $(this).data('id');
-            addDownload(songId);
-        });
-
-        $('.delete-playlist-btn').off('click').on('click', function() {
-            const name = $(this).data('name');
-            if (confirm(`Delete playlist "${name}"?`)) {
-                const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-                delete playlists[name];
-                localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
-                renderPlaylists();
-                elements.status.text(`Playlist "${name}" deleted`);
+            if (songId === state.currentSongId) {
+                updateLikeButton();
             }
         });
 
-        $(document).on('click', (e) => {
+        $('.playlist-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const song = JSON.parse($(this).attr('data-song'));
+            console.log('Playlist button clicked:', song.name);
+            showPlaylistModal(song);
+            $(this).parents('.three-dot-dropdown').addClass('hidden');
+        });
+
+        $('.play-next-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const song = JSON.parse($(this).attr('data-song'));
+            console.log('Play next button clicked:', song.name);
+            addToPlayNext(song);
+            $(this).parents('.three-dot-dropdown').addClass('hidden');
+        });
+
+        $('.download-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const songId = $(this).data('id');
+            console.log('Download button clicked:', songId);
+            addDownload(songId);
+            $(this).parents('.three-dot-dropdown').addClass('hidden');
+        });
+
+        $('.delete-playlist-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const playlistName = $(this).data('name');
+            console.log('Delete playlist clicked:', playlistName);
+            if (confirm(`Delete playlist "${playlistName}"?`)) {
+                const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+                delete playlists[playlistName];
+                localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+                renderPlaylists();
+                elements.status.text(`Playlist "${playlistName}" deleted`);
+            }
+        });
+
+        $(document).off('click').on('click', (e) => {
             if (!$(e.target).closest('.three-dot-menu').length) {
                 $('.three-dot-dropdown').addClass('hidden');
             }
         });
     }
 
-    // Tab Functions
-    function showTab(tab) {
-        $('.tab-content').addClass('hidden');
-        $(`#${tab}-tab`).removeClass('hidden');
-        elements.tabButtons.removeClass('bg-teal-500 text-white active').addClass('bg-gray-800 text-gray-400');
-        $(`.tab-btn[data-tab="${tab}"]`).addClass('bg-teal-500 text-white active').removeClass('bg-gray-800 text-gray-400');
-        if (tab === 'home') loadHomeContent();
-        else if (tab === 'likes') renderLikes();
-        else if (tab === 'playlists') renderPlaylists();
-        else if (tab === 'offline') renderOffline();
-        else if (tab === 'search') {
-            if (state.lastSearch) doViTuneSearch(state.lastSearch, true);
-        }
-    }
-
     // Utility Functions
     function textAbstract(text, length) {
         if (!text) return '';
+        text = $('<div/>').html(text).text();
         if (text.length <= length) return text;
-        text = text.substring(0, length);
-        const last = text.lastIndexOf(' ');
-        text = text.substring(0, last);
-        return text + '...';
+        return text.substring(0, length).trim() + '...';
     }
 
     function formatDuration(seconds) {
-        const measuredTime = new Date(null);
-        measuredTime.setSeconds(parseInt(seconds));
-        let time = measuredTime.toISOString().substr(11, 8);
-        if (time.startsWith('00:0')) return time.slice(4);
-        if (time.startsWith('00:')) return time.slice(3);
-        return time;
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60);
+        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
-    // Auto Play Setup
+    function showTab(tabName) {
+        $('.tab-content').addClass('hidden');
+        $(`#${tabName}-tab`).removeClass('hidden');
+        elements.tabButtons.removeClass('bg-teal-500 text-white').addClass('bg-gray-800 text-gray-400');
+        $(`.tab-btn[data-tab="${tabName}"]`).removeClass('bg-gray-800 text-gray-400').addClass('bg-teal-500 text-white');
+        if (tabName === 'likes') renderLikes();
+        else if (tabName === 'playlists') renderPlaylists();
+        else if (tabName === 'offline') renderOffline();
+        else if (tabName === 'home') loadHomeContent();
+        console.log('Tab shown:', tabName);
+    }
+
     function setupAutoPlay() {
-        elements.player.off('ended').on('ended', () => {
-            console.log('Song ended:', state.currentSongId);
+        elements.player[0].addEventListener('ended', () => {
+            console.log('Song ended');
             playNextSong();
         });
     }
 
+    // Start Application
     init();
 });
