@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViTune</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-900 text-white font-poppins">
+    <!-- Header -->
+    <header class="bg-gray-800 bg-opacity-50 backdrop-blur-md p-4 flex items-center justify-between gap-4">
+        <h1 class="text-2xl font-bold flex-shrink-0">ViTune</h1>
+        <div class="relative flex-grow max-w-md">
+            <input id="search-box" type="text" placeholder="Search songs..." class="w-full bg-gray-700 bg-opacity-50 rounded-full py-2 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <i id="clear-search" class="fa fa-times absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hidden"></i>
+        </div>
+        <a href="settings.html" class="text-teal-500 hover:text-teal-600 flex-shrink-0">
+            <i class="fa fa-cog text-xl"></i>
+        </a>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex space-x-2 p-4 overflow-x-auto">
+        <button class="tab-btn bg-teal-500 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('home')">Home</button>
+        <button class="tab-btn bg-gray-800 bg-opacity-50 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('search')">Search</button>
+        <button class="tab-btn bg-gray-800 bg-opacity-50 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('suggestions')">Suggestions</button>
+        <button class="tab-btn bg-gray-800 bg-opacity-50 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('liked-songs')">Liked Songs</button>
+        <button class="tab-btn bg-gray-800 bg-opacity-50 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('playlists')">Playlists</button>
+        <button class="tab-btn bg-gray-800 bg-opacity-50 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="showTab('offline')">Offline</button>
+    </nav>
+
+    <!-- Tab Content -->
+    <main class="p-4">
+        <div id="home-tab" class="tab-content">
+            <div id="home-content"></div>
+            <h2 class="text-xl font-semibold mb-4">Featured Song</h2>
+            <div id="featured-song"></div>
+        </div>
+        <div id="search-tab" class="tab-content hidden">
+            <p id="status" class="text-center mb-4"></p>
+            <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </div>
+        <div id="suggestions-tab" class="tab-content hidden">
+            <h2 class="text-xl font-semibold mb-4">Suggestions</h2>
+            <div id="suggestions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+            <h2 class="text-xl font-semibold mb-4 mt-8">More Suggestions</h2>
+            <div id="suggestion-bar" class="flex space-x-4 overflow-x-auto pb-4"></div>
+        </div>
+        <div id="liked-songs-tab" class="tab-content hidden">
+            <h2 class="text-xl font-semibold mb-4">Liked Songs</h2>
+            <div id="liked-songs-list"></div>
+        </div>
+        <div id="playlists-tab" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Playlists</h2>
+                <button class="bg-teal-500 text-white rounded-full py-2 px-4 text-sm hover:bg-teal-600" onclick="createPlaylist()">Create Playlist</button>
+            </div>
+            <div id="playlists-list"></div>
+        </div>
+        <div id="offline-tab" class="tab-content hidden">
+            <h2 class="text-xl font-semibold mb-4">Offline Songs</h2>
+            <div id="offline-list"></div>
+        </div>
+    </main>
+
+    <!-- Audio Player -->
+    <div id="audio-player" class="audio-player fixed bottom-0 left-0 right-0 bg-gray-800 bg-opacity-50 backdrop-blur-md p-4 hidden">
+        <div class="audio-player-content">
+            <div class="compact flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img id="player-image" src="" alt="Song Image" class="w-12 h-12 object-cover rounded-lg">
+                    <div>
+                        <h3 id="player-name" class="text-sm font-bold truncate"></h3>
+                        <p id="player-album" class="text-xs text-gray-400 truncate"></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="play-pause-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-play"></i></button>
+                    <button onclick="togglePlayer()" class="text-teal-500 hover:text-teal-600"><i class="fa fa-expand"></i></button>
+                </div>
+            </div>
+            <div class="expanded hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="player-name-expanded" class="text-lg font-bold truncate"></h3>
+                    <button onclick="togglePlayer()" class="text-teal-500 hover:text-teal-600"><i class="fa fa-compress"></i></button>
+                </div>
+                <img id="player-image-expanded" src="" alt="Song Image" class="w-full h-64 object-cover rounded-lg mb-4">
+                <p id="player-album-expanded" class="text-sm text-gray-400 truncate mb-4"></p>
+                <div id="progress-container" class="simple color-teal w-full h-2 bg-gray-700 rounded-full mb-2">
+                    <div id="progress-bar" class="h-full bg-teal-500 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mb-4">
+                    <span id="current-time">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+                <div class="flex justify-center space-x-4">
+                    <button id="prev-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-step-backward"></i></button>
+                    <button id="play-pause-btn-expanded" class="text-teal-500 hover:text-teal-600"><i class="fa fa-play"></i></button>
+                    <button id="next-btn-expanded" class="text-teal-500 hover:text-teal-600"><i class="fa fa-step-forward"></i></button>
+                    <button id="loop-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-retweet"></i></button>
+                    <button id="like-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-heart"></i></button>
+                    <button id="playlist-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-plus"></i></button>
+                    <button id="lyrics-btn" class="text-teal-500 hover:text-teal-600"><i class="fa fa-align-left"></i></button>
+                </div>
+            </div>
+        </div>
+        <audio id="player" preload="auto">
+            <source id="audio-source" src="" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- Lyrics Modal -->
+    <div id="lyricsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 bg-opacity-50 backdrop-blur-md rounded-xl p-6 w-full max-w-md h-96 overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Lyrics</h3>
+                <button onclick="closeLyrics()" class="text-teal-500 hover:text-teal-600"><i class="fa fa-times"></i></button>
+            </div>
+            <div id="lyrics-content"></div>
+        </div>
+    </div>
+
+    <!-- Playlist Modal -->
+    <div id="playlistModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 bg-opacity-50 backdrop-blur-md rounded-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Add to Playlist</h3>
+                <button onclick="document.getElementById('playlistModal').classList.add('hidden')" class="text-teal-500 hover:text-teal-600"><i class="fa fa-times"></i></button>
+            </div>
+            <ul id="playlist-options" class="space-y-2"></ul>
+        </div>
+    </div>
+
+    <script src="js/functions.js"></script>
+</body>
+</html>
