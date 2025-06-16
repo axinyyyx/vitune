@@ -1,3 +1,4 @@
+
 $(document).ready(function() {
     // DOM Elements (unchanged)
     const elements = {
