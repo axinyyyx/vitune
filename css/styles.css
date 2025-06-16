@@ -1,10 +1,52 @@
-/* Existing styles */
+/* Existing styles (assumed) */
 body {
-    touch-action: none;
+    overscroll-behavior-y: none;
+    touch-action: auto;
 }
 
-#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list {
-    touch-action: auto;
+#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    max-height: 100vh;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+#ViTune-results::-webkit-scrollbar,
+#home-content::-webkit-scrollbar,
+#playlists-list::-webkit-scrollbar,
+#likes-list::-webkit-scrollbar,
+#offline-list::-webkit-scrollbar,
+#settings-content::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
+}
+
+/* Add any existing styles for song cards, player, buttons, etc. */
+.song-container {
+    background-color: #1f2937;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+}
+
+.song-container:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn {
+    color: #14b8a6;
+}
+
+.control-btn:hover {
+    color: #0d9488;
+}
+
+/* Ensure settings page has sufficient content height */
+#settings-content {
+    min-height: 120vh; /* Ensure scrollable content */
+    padding: 1rem;
 }
 
 /* Style for infinity icon */

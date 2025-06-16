@@ -55,7 +55,7 @@ $(document).ready(function() {
         isDetailedView: false,
         allowNavigation: false,
         currentPlaylistView: null,
-        isTransitioning: false // Prevent multiple playNextSong calls
+        isTransitioning: false
     };
 
     const STORAGE_KEYS = {
@@ -107,13 +107,22 @@ $(document).ready(function() {
 
     // Disable Pull-to-Refresh on Mobile
     function disablePullToRefresh() {
-        $('body').css('touch-action', 'none');
-        $(document).on('touchmove', (e) => {
-            if (e.originalEvent.touches.length === 1 && $(e.target).closest('#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list').length) {
-                return;
-            }
-            e.preventDefault();
+        // Apply scrollable styles to main app and settings page
+        const scrollableContainers = '#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content';
+        $(scrollableContainers).css({
+            'overscroll-behavior-y': 'contain',
+            'overflow-y': 'auto',
+            'max-height': '100vh',
+            'scrollbar-width': 'none', /* Firefox */
+            '-ms-overflow-style': 'none' /* IE and Edge */
         });
+        // Hide WebKit scrollbars
+        $(scrollableContainers).each(function() {
+            this.style.setProperty('::-webkit-scrollbar', 'display: none', 'important');
+        });
+        $('body').css('overscroll-behavior-y', 'none');
+        $('body').css('touch-action', 'auto');
+        $(document).off('touchmove');
     }
 
     // Disable Refresh and Zoom
@@ -143,7 +152,10 @@ $(document).ready(function() {
         for (const song of history) {
             try {
                 const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
-                if (response.ok) validHistory.push(song);
+                if (response.ok) {
+                    validHistory.push(song);
+                    state.resultsObjects[song.id] = { track: song };
+                }
             } catch {
                 // Skip invalid URLs
             }
@@ -363,10 +375,7 @@ $(document).ready(function() {
         elements.loopBtn.toggleClass('active', state.isLooping);
         console.log('Loop state:', state.isLooping, 'Audio loop attribute:', elements.player[0].loop);
 
-        // Remove existing label if any
         $('.loop-state-label').remove();
-
-        // Create and show ON/OFF label
         const labelText = state.isLooping ? 'ON' : 'OFF';
         const label = $(`<span class="loop-state-label">${labelText}</span>`);
         elements.loopBtn.parent().css('position', 'relative').append(label);
@@ -497,12 +506,9 @@ $(document).ready(function() {
 
     // Playback Functions
     async function playAudio(audioUrl, songId) {
-        if (state.isTransitioning) {
-            console.log('playAudio blocked: Transition in progress');
-            return;
-        }
+        console.log('playAudio called:', { songId, audioUrl });
+        state.isTransitioning = false; // Force reset to prevent lock
         state.isTransitioning = true;
-        console.log('playAudio called for songId:', songId);
 
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
@@ -512,17 +518,32 @@ $(document).ready(function() {
             return;
         }
 
+        // Validate URL
         try {
             const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
-            if (!response.ok) throw new Error('Song unavailable');
-        } catch {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            console.error('Song unavailable:', { audioUrl, error });
             elements.status.text('Error: Song unavailable. Skipping...');
             state.isTransitioning = false;
             playNextSong();
             return;
         }
 
+        // Reset audio element
+        try {
+            elements.player[0].pause();
+            elements.player[0].currentTime = 0;
+            elements.audioSource.removeAttr('src');
+            elements.player[0].load();
+            console.log('Audio element reset');
+        } catch (error) {
+            console.error('Audio reset error:', error);
+        }
+
+        // Update state and UI
         state.currentSongId = songId;
+        state.isPlaying = false;
         elements.audioSource.attr('src', audioUrl);
         elements.playerName.text(song.name);
         elements.playerNameD.text(song.name);
@@ -547,19 +568,23 @@ $(document).ready(function() {
         history.unshift(song);
         history = history.slice(0, 50);
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        state.resultsObjects[song.id] = { track: song };
 
-        elements.player[0].load();
-        elements.player[0].play().then(() => {
+        // Play audio
+        try {
+            await elements.player[0].load();
+            await elements.player[0].play();
             state.isPlaying = true;
             elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
             console.log('Playing song:', song.name);
-            state.isTransitioning = false;
-        }).catch(error => {
+        } catch (error) {
             console.error('Audio play error:', error);
-            elements.status.text('Error playing song.');
-            state.isTransitioning = false;
+            elements.status.text('Error playing song. Skipping...');
             playNextSong();
-        });
+        } finally {
+            state.isTransitioning = false;
+            console.log('playAudio completed, isTransitioning:', state.isTransitioning);
+        }
 
         updateLikeButton();
         savePlayQueue();
@@ -572,35 +597,102 @@ $(document).ready(function() {
         if (state.isPlaying) {
             elements.player[0].pause();
             elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
+            state.isPlaying = false;
         } else {
-            elements.player[0].play().catch(() => {
+            elements.player[0].play().then(() => {
+                elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
+                state.isPlaying = true;
+            }).catch(() => {
                 elements.status.text('Error: Unable to play.');
             });
-            elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
         }
-        state.isPlaying = !state.isPlaying;
         console.log('Play state:', state.isPlaying);
     }
 
-    function playNextSong() {
-        if (state.isTransitioning) {
-            console.log('playNextSong blocked: Transition in progress');
-            return;
+    function getCurrentContext() {
+        let context = { type: 'unknown', songs: [], container: '' };
+        if ($('#search-tab').is(':visible')) {
+            context = {
+                type: 'search',
+                songs: Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song),
+                container: '#ViTune-results'
+            };
+        } else if ($('#likes-tab').is(':visible')) {
+            const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+            likes.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+            context = {
+                type: 'likes',
+                songs: likes,
+                container: '#likes-list'
+            };
+        } else if ($('#playlists-tab').is(':visible') && state.currentPlaylistView) {
+            const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+            const playlistSongs = playlists[state.currentPlaylistView] || [];
+            playlistSongs.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+            context = {
+                type: 'playlist',
+                songs: playlistSongs,
+                container: '#playlists-list'
+            };
+        } else if ($('#home-tab').is(':visible') && state.currentPlaylistView) {
+            const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+            const playlistSongs = playlists[state.currentPlaylistView] || [];
+            playlistSongs.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+            context = {
+                type: 'playlist',
+                songs: playlistSongs,
+                container: '#home-content'
+            };
+        } else if ($('#home-tab').is(':visible')) {
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+            history.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+            context = {
+                type: 'recent',
+                songs: history,
+                container: '#home-content .recent-played'
+            };
+        } else if ($('#offline-tab').is(':visible')) {
+            const offline = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+            offline.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+            context = {
+                type: 'offline',
+                songs: offline,
+                container: '#offline-list'
+            };
         }
-        state.isTransitioning = true;
-        console.log('playNextSong called, playQueue length:', state.playQueue.length);
+        console.log('getCurrentContext:', { type: context.type, songCount: context.songs.length });
+        return context;
+    }
 
+    function playNextSong() {
+        console.log('playNextSong called:', { isTransitioning: state.isTransitioning, currentSongId: state.currentSongId });
+        state.isTransitioning = false; // Force reset
+        state.isTransitioning = true;
+
+        // Check play queue
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             console.log('Playing from queue:', nextSong.name);
+            state.resultsObjects[nextSong.id] = { track: nextSong };
             playAudio(nextSong.url, nextSong.id);
             savePlayQueue();
             return;
         }
 
-        const songContainers = $('.song-container[data-song-id]');
-        if (songContainers.length === 0) {
-            console.log('No songs available in current context');
+        // Get context
+        const context = getCurrentContext();
+        if (context.songs.length === 0) {
+            console.log('No songs in context:', context.type);
             elements.status.text('No more songs to play.');
             state.isPlaying = false;
             elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
@@ -608,42 +700,31 @@ $(document).ready(function() {
             return;
         }
 
-        const currentIndex = songContainers.index($(`[data-song-id="${state.currentSongId}"]`));
+        // Find current song index
+        let currentIndex = context.songs.findIndex(song => song.id === state.currentSongId);
+        console.log('Current index:', currentIndex);
+
+        // If not found, start from first
         if (currentIndex === -1) {
-            console.log('Current song not found in context, playing first song');
-            const firstSongId = songContainers.first().data('song-id');
-            const firstSong = state.resultsObjects[firstSongId]?.track;
-            if (firstSong) {
-                playAudio(firstSong.url, firstSongId);
-            } else {
-                elements.status.text('Error: Song not found.');
-                state.isTransitioning = false;
-            }
-            return;
+            currentIndex = -1;
+            console.log('Current song not found, starting from first');
         }
 
-        if (currentIndex < songContainers.length - 1) {
-            const nextSongId = songContainers.eq(currentIndex + 1).data('song-id');
-            const nextSong = state.resultsObjects[nextSongId]?.track;
-            console.log('Playing next song in context:', nextSong?.name);
-            if (nextSong) {
-                playAudio(nextSong.url, nextSongId);
-            } else {
-                elements.status.text('Error: Next song not found.');
-                state.isTransitioning = false;
-            }
-        } else if (state.isLooping) {
-            const firstSongId = songContainers.first().data('song-id');
-            const firstSong = state.resultsObjects[firstSongId]?.track;
-            console.log('Looping to first song:', firstSong?.name);
-            if (firstSong) {
-                playAudio(firstSong.url, firstSongId);
-            } else {
-                elements.status.text('Error: First song not found.');
-                state.isTransitioning = false;
-            }
+        // Find next song
+        let nextSong = null;
+        if (currentIndex + 1 < context.songs.length) {
+            nextSong = context.songs[currentIndex + 1];
+            console.log('Next song:', nextSong.name);
+        } else if (state.isLooping && context.songs.length > 0) {
+            nextSong = context.songs[0];
+            console.log('Looping to first song:', nextSong.name);
+        }
+
+        if (nextSong) {
+            state.resultsObjects[nextSong.id] = { track: nextSong };
+            playAudio(nextSong.url, nextSong.id);
         } else {
-            console.log('End of playlist, stopping playback');
+            console.log('No next song, stopping');
             elements.status.text('End of playlist.');
             state.isPlaying = false;
             elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
@@ -652,28 +733,30 @@ $(document).ready(function() {
     }
 
     function playPreviousSong() {
-        if (state.isTransitioning) {
-            console.log('playPreviousSong blocked: Transition in progress');
+        console.log('playPreviousSong called');
+        state.isTransitioning = false;
+        state.isTransitioning = true;
+
+        const context = getCurrentContext();
+        if (context.songs.length === 0) {
+            console.log('No songs in context:', context.type);
+            elements.status.text('No previous songs.');
+            state.isTransitioning = false;
             return;
         }
-        state.isTransitioning = true;
-        console.log('playPreviousSong called');
 
-        const songContainers = $('.song-container[data-song-id]');
-        const currentIndex = songContainers.index($(`[data-song-id="${state.currentSongId}"]`));
-        if (currentIndex > 0) {
-            const prevSongId = songContainers.eq(currentIndex - 1).data('song-id');
-            const prevSong = state.resultsObjects[prevSongId]?.track;
-            if (prevSong) {
-                playAudio(prevSong.url, prevSongId);
-            } else {
-                elements.status.text('Error: Previous song not found.');
-                state.isTransitioning = false;
-            }
-        } else {
+        const currentIndex = context.songs.findIndex(song => song.id === state.currentSongId);
+        if (currentIndex <= 0) {
+            console.log('No previous song');
             elements.status.text('No previous song.');
             state.isTransitioning = false;
+            return;
         }
+
+        const prevSong = context.songs[currentIndex - 1];
+        console.log('Playing previous song:', prevSong.name);
+        state.resultsObjects[prevSong.id] = { track: prevSong };
+        playAudio(prevSong.url, prevSong.id);
     }
 
     function updateProgress() {
@@ -872,7 +955,7 @@ $(document).ready(function() {
         elements.mpLink.css({ backgroundColor: 'green', borderColor: 'green' });
         setTimeout(() => {
             elements.mpLink.css({ backgroundColor: '#1f2937', borderColor: 'transparent' });
-        }, 1000);
+        }, 2000);
 
         fetch(song.url)
             .then(response => {
@@ -956,7 +1039,7 @@ $(document).ready(function() {
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <div class="recent-played grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
@@ -987,6 +1070,9 @@ $(document).ready(function() {
 
     function renderLikes() {
         const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        likes.forEach(song => {
+            state.resultsObjects[song.id] = { track: song };
+        });
         elements.likesList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 ${likes.length ? likes.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
@@ -1030,6 +1116,9 @@ $(document).ready(function() {
     function renderPlaylistSongs(playlistName, containerId = '#playlists-list') {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         const songs = playlists[playlistName] || [];
+        songs.forEach(song => {
+            state.resultsObjects[song.id] = { track: song };
+        });
         $(containerId).html(`
             <div class="mb-4">
                 <div class="flex justify-between mb-2">
@@ -1083,6 +1172,9 @@ $(document).ready(function() {
 
     function renderOffline() {
         const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        offlineSongs.forEach(song => {
+            state.resultsObjects[song.id] = { track: song };
+        });
         elements.offlineList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
@@ -1100,6 +1192,7 @@ $(document).ready(function() {
             if (song) {
                 playAudio(song.url, songId);
             } else {
+                console.error('Song not found for play:', songId);
                 elements.status.text('Error: Song not found.');
             }
         }, 200);
@@ -1223,7 +1316,7 @@ $(document).ready(function() {
 
     function setupAutoPlay() {
         elements.player.off('ended').on('ended', () => {
-            console.log('Song ended, isLooping:', state.isLooping);
+            console.log('Song ended:', { isLooping: state.isLooping });
             if (!state.isLooping) {
                 playNextSong();
             }
