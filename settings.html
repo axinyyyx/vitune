@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ViTune Settings</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-purple-900 text-white font-poppins no-scrollbar">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-8 text-center">Settings</h1>
+        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-5 mb-4">
+            <h2 class="text-lg font-semibold mb-4">Appearance</h2>
+            <label class="flex items-center space-x-2 mb-4">
+                <span class="text-sm">Dark Theme</span>
+                <input type="checkbox" id="theme-toggle" class="toggle-checkbox hidden">
+                <span class="toggle-label w-9 h-4 bg-gray-600 rounded-full relative cursor-pointer">
+                    <span class="toggle-ball w-3 h-3 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform"></span>
+                </span>
+            </label>
+            <div class="mb-4">
+                <label for="button-size" class="block mb-2 text-sm">Button Size</label>
+                <select id="button-size" class="w-full bg-gray-700 bg-opacity-50 text-white rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="font-style" class="block mb-2">Font Style</label>
+                <select id="font-style" class="w-full bg-gray-700 bg-opacity-50 text-white rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="poppins">Poppins</option>
+                    <option value="inter">Inter</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="progress-style" class="block mb-2 text-sm">Progress Bar Style</label>
+                <select id="progress-style" class="w-full bg-gray-700 bg-opacity-50 text-white rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="simple">Simple Bar</option>
+                    <option value="dots">Dots</option>
+                    <option value="wavy">Wavy</option>
+                </select>
+            </div>
+            <div>
+                <label for="progress-color" class="block mb-2 text-sm">Progress Bar Color</label>
+                <select id="progress-color" class="w-full bg-gray-700 bg-opacity-50 text-white rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="teal">Teal</option>
+                    <option value="red">Red</option>
+                    <option value="purple">Purple</option>
+                </select>
+            </div>
+        </div>
+        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-5 mb-4">
+            <h2 class="text-lg font-semibold mb-4">About Developer</h2>
+            <p class="text-sm">Rishabh Kumar, Developer of ViTune Web</p>
+            <p class="text-sm">Developed since 15-June-2025. Completed on 21-June-2025.</p>
+            <a href="https://github.com/axinyyyx/ViTune-Web" target="_blank" class="inline-block mt-3 bg-teal-500 text-white rounded-full py-1.5 px-3 hover:bg-teal-600 text-sm"><i class="fab fa-github mr-2"></i>Visit GitHub</a>
+        </div>
+        <a href="index.html" class="inline-block bg-teal-500 text-white rounded-full py-1.5 px-3 hover:bg-teal-600 text-sm"><i class="fa fa-arrow-left mr-1"></i>Back to Home</a>
+    </div>
+    <script src="js/functions.js"></script>
+</body>
+</html>
