@@ -6,113 +6,169 @@
     <title>ViTune Settings</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&family=Arial&family=Times+New+Roman" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-gradient-to-br from-gray-900 to-purple-900 text-white font-poppins no-scrollbar">
+<body class="bg-gray-900 text-white font-poppins no-scrollbar transition-all duration-200">
     <!-- Navbar -->
-    <nav class="sticky top-0 bg-black bg-opacity-30 backdrop-blur-lg shadow-lg z-50">
+    <nav class="sticky top-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <a onclick="history.back()" class="text-teal-500 hover:text-teal-300"><i class="fa fa-arrow-left text-xl"></i></a>
-            </div>
-            <div class="flex items-center">
-                <img src="img/58964258.png" alt="ViTune Logo" class="w-8 h-8 object-cover sm:hidden">
-                <h1 class="text-2xl font-bold hidden sm:block">ViTune</h1>
+            <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
+            <div class="flex items-center space-x-2">
+                <img src="img/logo.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
+                <h1 class="text-xl font-bold">ViTune Settings</h1>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-6">Settings</h1>
-        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-6 mb-4">
-            <h2 class="text-lg font-semibold mb-4">Appearance</h2>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Theme</label>
-                <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+    <main class="container mx-auto px-4 py-6">
+        <h1 class="text-2xl font-bold mb-6">Settings</h1>
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Appearance</h2>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Theme</label>
+                <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
-                    <option value="blue">Blue</option>
-                    <option value="green">Green</option>
                 </select>
             </div>
-            <div class="mb-4 flex items-center justify-between">
-                <label class="text-sm">Transparent Effect</label>
-                <div class="relative w-10 h-5 bg-gray-600 rounded-full">
-                    <input type="checkbox" id="transparent-toggle" class="toggle-checkbox absolute opacity-0 w-full h-full cursor-pointer">
-                    <span class="toggle-label absolute inset-0 rounded-full bg-gray-600 transition"></span>
-                    <span class="toggle-ball absolute w-4 h-4 bg-white rounded-full top-0.5 left-0.5 transition transform"></span>
-                </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Transparent Effect</label>
+                <select id="transparent-effect" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Font Style</label>
-                <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Font Style</label>
+                <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
                     <option value="poppins">Poppins</option>
-                    <option value="inter">Inter</option>
                     <option value="roboto">Roboto</option>
+                    <option value="open-sans">Open Sans</option>
+                    <option value="lato">Lato</option>
                     <option value="montserrat">Montserrat</option>
+                    <option value="arial">Arial</option>
+                    <option value="times">Times New Roman</option>
                 </select>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Font Size</label>
-                <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Font Size</label>
+                <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
                     <option value="small">Small</option>
                     <option value="medium">Medium</option>
                     <option value="large">Large</option>
                 </select>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Progress Bar Style</label>
-                <select id="progress-style" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Progress Bar Style</label>
+                <select id="progress-bar-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
                     <option value="simple">Simple</option>
-                    <option value="wavy">Wavy</option>
-                    <option value="dots">Dots</option>
+                    <option value="gradient">Gradient</option>
                 </select>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Progress Bar Color</label>
-                <select id="progress-color" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Progress Bar Color</label>
+                <select id="progress-bar-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
                     <option value="teal">Teal</option>
                     <option value="red">Red</option>
-                    <option value="purple">Purple</option>
                     <option value="blue">Blue</option>
                 </select>
             </div>
         </div>
-        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-6 mb-4">
-            <h2 class="text-lg font-semibold mb-4">Audio Settings</h2>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Audio Quality</label>
-                <select id="ViTune-bitrate" class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <option value="4">320kbps</option>
-                    <option value="3" selected>160kbps</option>
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Audio Settings</h2>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Audio Quality</label>
+                <select id="ViTune-bitrate" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                    <option value="4" selected>320kbps</option>
+                    <option value="3">160kbps</option>
                     <option value="2">96kbps</option>
                     <option value="1">48kbps</option>
                 </select>
             </div>
-        </div>
-        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-6 mb-4">
-            <h2 class="text-lg font-semibold mb-4">Mood Filter</h2>
-            <div class="flex items-center justify-between">
-                <label class="text-sm">Mood Off (Upbeat Songs Only)</label>
-                <div class="relative w-10 h-5 bg-gray-600 rounded-full">
-                    <input type="checkbox" id="mood-toggle" class="toggle-checkbox absolute opacity-0 w-full h-full cursor-pointer">
-                    <span class="toggle-label absolute inset-0 rounded-full bg-gray-600 transition"></span>
-                    <span class="toggle-ball absolute w-4 h-4 bg-white rounded-full top-0.5 left-0.5 transition transform"></span>
-                </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Mood Filter</label>
+                <select id="mood-filter" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200">
+                    <option value="off">Mood Off (Upbeat Songs Only)</option>
+                    <option value="all">All Songs</option>
+                </select>
             </div>
         </div>
-        <div class="bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-6">
-            <h2 class="text-lg font-semibold mb-4">About Developer</h2>
-            <p class="text-sm mb-2">Rishabh Kumar, Developer of ViTune Web</p>
-            <p class="text-sm mb-4">Developed since 15-June-2025. Work in progress.</p>
-            <a href="https://www.instagram.com/rishabhsahill" target="_blank" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm"><i class="fab fa-instagram mr-2"></i>Visit Instagram</a>
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Data Management</h2>
+            <button id="clear-data-btn" class="bg-red-500 text-white rounded-full py-1 px-3 text-sm hover:bg-red-600 transition duration-200"><i class="fa fa-trash mr-1"></i>Clear All Data</button>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4 transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">About Developer</h2>
+            <p>Rishabh Kumar, Developer of ViTune Web</p>
+            <p>Developed since 15-June-2025. Work in progress.</p>
+            <a href="https://instagram.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 transition duration-200"><i class="fa fa-instagram mr-1"></i>Visit Instagram</a>
         </div>
     </main>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="js/functions.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Load Settings
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            $('#theme-style').val(settings.theme || 'dark');
+            $('#transparent-effect').val(settings.transparentEffect || 'off');
+            $('#font-style').val(settings.fontStyle || 'poppins');
+            $('#font-size').val(settings.fontSize || 'medium');
+            $('#progress-bar-style').val(settings.progressBarStyle || 'simple');
+            $('#progress-bar-color').val(settings.progressBarColor || 'teal');
+            $('#ViTune-bitrate').val(settings.bitrate || '4');
+            $('#mood-filter').val(settings.moodFilter || 'off');
+
+            // Apply Settings
+            function applySettings() {
+                $('body').removeClass('dark light font-poppins font-roboto font-open-sans font-lato font-montserrat font-arial font-times font-small font-medium font-large transparent-on transparent-off');
+                $('body').addClass($('#theme-style').val());
+                $('body').addClass(`font-${$('#font-style').val()}`);
+                $('body').addClass(`font-${$('#font-size').val()}`);
+                $('body').addClass(`transparent-${$('#transparent-effect').val()}`);
+                $('#audio-player, #mpopupBox .modal-content, #playlist-modal .bg-gray-800').toggleClass('bg-opacity-50', $('#transparent-effect').val() === 'on');
+                $('#progress-bar').removeClass('bg-teal-500 bg-red-500 bg-blue-500 progress-bar-simple progress-bar-gradient');
+                $('#progress-bar').addClass(`bg-${$('#progress-bar-color').val()}-500`);
+                $('#progress-bar').addClass(`progress-bar-${$('#progress-bar-style').val()}`);
+                // Trigger custom event for index.html to sync settings
+                $(window).trigger('settings:updated');
+            }
+            applySettings();
+
+            // Save Settings
+            $('#theme-style, #transparent-effect, #font-style, #font-size, #progress-bar-style, #progress-bar-color, #ViTune-bitrate, #mood-filter').on('change', function() {
+                const settings = {
+                    theme: $('#theme-style').val(),
+                    transparentEffect: $('#transparent-effect').val(),
+                    fontStyle: $('#font-style').val(),
+                    fontSize: $('#font-size').val(),
+                    progressBarStyle: $('#progress-bar-style').val(),
+                    progressBarColor: $('#progress-bar-color').val(),
+                    bitrate: $('#ViTune-bitrate').val(),
+                    moodFilter: $('#mood-filter').val()
+                };
+                localStorage.setItem('settings', JSON.stringify(settings));
+                applySettings();
+                if (this.id === 'ViTune-bitrate') {
+                    const lastSearch = window.location.hash.substring(1);
+                    if (lastSearch) {
+                        $(document).trigger('ViTune:search', [decodeURIComponent(lastSearch)]);
+                    }
+                }
+            });
+
+            // Clear Data
+            $('#clear-data-btn').on('click', function() {
+                if (confirm('Are you sure you want to clear all data? This will remove likes, playlists, offline songs, history, and settings.')) {
+                    localStorage.clear();
+                    alert('All data cleared successfully!');
+                    window.location.reload();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
