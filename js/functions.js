@@ -1,299 +1,487 @@
-document.addEventListener('DOMContentLoaded', () => {
+$(document).ready(function() {
     // DOM Elements
     const elements = {
-        searchBox: document.getElementById('search-box'),
-        clearSearch: document.getElementById('clear-search'),
-        results: document.getElementById('results'),
-        status: document.getElementById('status'),
-        player: document.getElementById('player'),
-        audioSource: document.getElementById('audio-source'),
-        playerName: document.getElementById('player-name'),
-        playerAlbum: document.getElementById('player-album'),
-        playerImage: document.getElementById('player-image'),
-        audioPlayer: document.getElementById('audio-player'),
-        playPauseBtn: document.getElementById('play-pause-btn'),
-        playPauseBtnExpanded: document.getElementById('play-pause-btn-expanded'),
-        prevBtn: document.getElementById('prev-btn'),
-        nextBtn: document.getElementById('next-btn-expanded'),
-        lyricsBtn: document.getElementById('lyrics-btn'),
-        loopBtn: document.getElementById('loop-btn'),
-        likeBtn: document.getElementById('like-btn'),
-        playlistBtn: document.getElementById('playlist-btn'),
-        progressBar: document.getElementById('progress-bar'),
-        progressContainer: document.getElementById('progress-container'),
-        currentTime: document.getElementById('current-time'),
-        duration: document.getElementById('duration'),
-        lyricsModal: document.getElementById('lyricsModal'),
-        lyricsContent: document.getElementById('lyrics-content'),
-        likedSongsList: document.getElementById('liked-songs-list'),
-        playlistsList: document.getElementById('playlists-list'),
-        offlineList: document.getElementById('offline-list'),
-        featuredSong: document.getElementById('featured-song'),
-        suggestions: document.getElementById('suggestions'),
-        suggestionBar: document.getElementById('suggestion-bar'),
-        playerNameExpanded: document.getElementById('player-name-expanded'),
-        playerAlbumExpanded: document.getElementById('player-album-expanded'),
-        playerImageExpanded: document.getElementById('player-image-expanded'),
-        homeContent: document.getElementById('home-content')
+        searchBox: $('#search-box'),
+        clearSearch: $('#clear-search'),
+        results: $('#results'),
+        status: $('#status'),
+        player: $('#player'),
+        audioSource: $('#audio-source'),
+        playerName: $('#player-name'),
+        playerAlbum: $('#player-album'),
+        playerImage: $('#player-image'),
+        audioPlayer: $('#audio-player'),
+        playPauseBtn: $('#play-pause-btn'),
+        playPauseBtnExpanded: $('#play-pause-btn-expanded'),
+        prevBtn: $('#prev-btn'),
+        nextBtn: $('#next-btn'),
+        nextBtnExpanded: $('#next-btn-expanded'),
+        loopBtn: $('#loop-btn'),
+        likeBtn: $('#like-btn'),
+        playlistBtn: $('#playlist-btn'),
+        progressBar: $('#progress-bar'),
+        progressContainer: $('#progress-container'),
+        currentTime: $('#current-time'),
+        duration: $('#duration'),
+        likesList: $('#likes-list'),
+        playlistsList: $('#playlists-list'),
+        offlineList: $('#offline-list'),
+        aiSuggestionBar: $('#ai-suggestion-bar'),
+        playerNameExpanded: $('#player-name-expanded'),
+        playerAlbumExpanded: $('#player-album-expanded'),
+        playerImageExpanded: $('#player-image-expanded'),
+        homeContent: $('#home-content'),
+        playlistModal: $('#playlist-modal'),
+        playlistOptions: $('#playlist-options'),
+        closePlaylistModal: $('#close-playlist-modal'),
+        createPlaylistBtn: $('#create-playlist-btn'),
+        tabButtons: $('.tab-btn'),
+        togglePlayerBtn: $('.toggle-player-btn'),
+        audioPlayerContent: $('.audio-player-content'),
+        bitrateSelect: $('#ViTune-bitrate'),
+        loadMoreBtn: $('#loadmore'),
+        downloadModal: $('#mpopupBox'),
+        downloadList: $('#download-list'),
+        closeDownloadModal: $('#close-download-modal'),
+        downloadLink: $('#mpopupLink')
     };
 
-    // Check for missing elements
-    for (const [key, value] of Object.entries(elements)) {
-        if (!value) console.warn(`Element with ID '${key}' not found`);
-    }
-
-    let currentSongIndex = -1;
-    let songs = [];
-    let queue = [];
-    let lyricsInterval = null;
-    let isLooping = false;
-    const CACHE_NAME = 'vitune-cache-v3';
-    const HISTORY_KEY = 'listening_history';
-    const LIKED_SONGS_KEY = 'likedSongs';
-    const API_BASE_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs';
-
-    // Audio Context for Equalizer Visualization
-    let audioContext = null;
-    let analyser = null;
-    let canvas = null;
-    let canvasCtx = null;
-
-    // Mock lyrics data
-    const mockLyrics = {
-        default: [
-            "This is a sample lyric line 1",
-            "This is a sample lyric line 2",
-            "Feel the rhythm, feel the rhyme",
-            "Get on up, it's music time",
-            "This is a sample lyric line 5",
-            "Keep on dancing through the night"
-        ]
+    // State Variables
+    let state = {
+        currentSongIndex: -1,
+        songs: [],
+        queue: [],
+        isLooping: false,
+        isPlaying: false,
+        currentSong: null,
+        lastSearch: '',
+        pageIndex: 1,
+        resultsObjects: {}
     };
 
-    // Initialize
-    initializePlayer();
-    loadHomeContent();
-    loadSuggestions();
-    applySettings();
-    handleUrlSearch();
+    const STORAGE_KEYS = {
+        HISTORY: 'listening_history',
+        LIKES: 'likes',
+        PLAYLISTS: 'playlists',
+        OFFLINE: 'offlineSongs',
+        SETTINGS: 'settings'
+    };
 
-    // Handle URL hash changes
-    window.addEventListener('hashchange', handleUrlSearch);
+    const JIOSAAVN_API = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs';
 
-    function handleUrlSearch() {
-        const hash = window.location.hash;
-        const searchRegex = /^#(?:search|homesing)\?(.+)/;
-        const match = hash.match(searchRegex);
-        if (match) {
-            const query = decodeURIComponent(match[1]);
-            elements.searchBox.value = query;
-            elements.clearSearch.classList.remove('hidden');
-            searchSongs(query, false, true); // Auto-play first song for URL-based searches
-            showTab('search');
-        } else {
-            showTab('home');
-        }
+    // Fallback Song
+    const fallbackSong = {
+        id: 'fallback1',
+        full_name: 'ViTune - Fallback Song',
+        title: 'Fallback Song',
+        album: 'Unknown Album',
+        artist: 'Unknown Artist',
+        duration: '3:00',
+        image: 'img/58964258.png',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        year: '2025',
+        language: 'english'
+    };
+
+    // Initialize Application
+    function init() {
+        applySettings();
+        loadAISuggestions();
+        loadHomeContent();
+        bindEventListeners();
+        handleDirectURL();
+        setupAutoPlay();
     }
 
-    // Live Search with Debounce
-    let searchTimeout;
-    if (elements.searchBox) {
-        elements.searchBox.addEventListener('input', () => {
+    // Bind Event Listeners
+    function bindEventListeners() {
+        // Search Input
+        let searchTimeout;
+        elements.searchBox.on('input', function() {
             clearTimeout(searchTimeout);
-            const query = elements.searchBox.value.trim();
-            elements.clearSearch.classList.toggle('hidden', !query);
+            const query = $(this).val().trim();
+            elements.clearSearch.toggleClass('hidden', !query);
             if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
-                    searchSongs(query, false, false); // No auto-play for manual searches
+                    doViTuneSearch(query);
                     showTab('search');
                 }, 300);
-            }
-        });
-    }
-
-    if (elements.clearSearch) {
-        elements.clearSearch.addEventListener('click', () => {
-            elements.searchBox.value = '';
-            elements.clearSearch.classList.add('hidden');
-            elements.results.innerHTML = '';
-            elements.status.textContent = '';
-            window.location.hash = '';
-            showTab('home');
-        });
-    }
-
-    function initializePlayer() {
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            const source = audioContext.createMediaElementSource(elements.player);
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
-            analyser.fftSize = 256;
-
-            canvas = document.createElement('canvas');
-            canvas.className = 'visualizer w-full h-16 mt-2';
-            const expanded = document.querySelector('.audio-player-content .expanded');
-            if (expanded) expanded.appendChild(canvas);
-            canvasCtx = canvas.getContext('2d');
-            canvas.width = 300;
-            canvas.height = 64;
-            renderVisualizer();
-        } catch (error) {
-            console.error('AudioContext initialization failed:', error);
-            showStatus('Audio visualizer initialization failed.', 3000);
-        }
-    }
-
-    function renderVisualizer() {
-        if (!analyser || !canvasCtx) return;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        const barWidth = canvas.width / bufferLength;
-
-        function draw() {
-            analyser.getByteFrequencyData(dataArray);
-            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = dataArray[i] / 2;
-                canvasCtx.fillStyle = `hsl(${i * 2}, 70%, 50%)`;
-                canvasCtx.fillRect(i * barWidth, canvas.height - barHeight, barWidth, barHeight);
-            }
-            requestAnimationFrame(draw);
-        }
-        draw();
-    }
-
-    function formatDuration(seconds) {
-        seconds = parseInt(seconds, 10);
-        const minutes = Math.floor(seconds / 60);
-        seconds = seconds % 60;
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    }
-
-    function showStatus(message, duration = 3000) {
-        if (elements.status) {
-            elements.status.innerHTML = message;
-            if (duration) {
-                setTimeout(() => elements.status.innerHTML = '', duration);
-            }
-        }
-    }
-
-    async function searchSongs(query, isFeatured = false, autoPlay = false) {
-        if (!elements.status) return;
-        elements.status.innerHTML = '<span class="spinner"></span> Searching...';
-        if (!isFeatured && elements.results) {
-            elements.results.innerHTML = '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">' + Array(4).fill('<div class="song-card skeleton h-64 rounded-xl"></div>').join('') + '</div>';
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}?query=${encodeURIComponent(query)}&limit=20&page=1`, {
-                headers: { 'Accept': 'application/json' }
-            });
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            const data = await response.json();
-            if (!data.data?.results?.length) {
-                showStatus('No results found');
-                if (elements.results) elements.results.innerHTML = '';
-                return;
-            }
-            songs = data.data.results.map(track => ({
-                id: track.id,
-                full_name: track.name,
-                album: track.album.name,
-                artist: track.primaryArtists,
-                duration: formatDuration(track.duration),
-                image_url: track.image[2]?.link || track.image[1]?.link || 'https://via.placeholder.com/150',
-                download_url: track.downloadUrl[4]?.link || track.downloadUrl[3]?.link || track.downloadUrl[2]?.link || '',
-                year: track.year
-            })).filter(song => song.download_url);
-            if (isFeatured) {
-                const randomSong = songs[Math.floor(Math.random() * songs.length)];
-                renderFeaturedSong(randomSong);
             } else {
-                renderResults(songs);
-                if (autoPlay && songs.length > 0) {
-                    await playSong(0);
-                }
+                elements.results.empty();
+                elements.status.text('');
+                showTab('home');
             }
-            elements.status.textContent = '';
-        } catch (error) {
-            showStatus('Failed to fetch songs. Please try again.');
-            console.error('Search error:', error);
-            if (elements.results) elements.results.innerHTML = '';
+        });
+
+        // Clear Search
+        elements.clearSearch.on('click', clearSearch);
+
+        // Bitrate Change
+        elements.bitrateSelect.on('change', function() {
+            if (state.lastSearch) {
+                doViTuneSearch(state.lastSearch);
+            }
+        });
+
+        // Load More
+        elements.loadMoreBtn.on('click', nextPage);
+
+        // Tab Buttons
+        elements.tabButtons.on('click', function() {
+            const tab = $(this).data('tab');
+            showTab(tab);
+        });
+
+        // Audio Player Controls
+        elements.playPauseBtn.add(elements.playPauseBtnExpanded).on('click', togglePlayPause);
+        elements.prevBtn.on('click', playPreviousSong);
+        elements.nextBtn.add(elements.nextBtnExpanded).on('click', playNextSong);
+        elements.loopBtn.on('click', toggleLoop);
+        elements.likeBtn.on('click', toggleLikeCurrentSong);
+        elements.playlistBtn.on('click', showPlaylistModalCurrentSong);
+        elements.togglePlayerBtn.on('click', togglePlayer);
+        elements.audioPlayerContent.find('.compact').on('click', togglePlayer);
+        elements.closePlaylistModal.on('click', closePlaylistModal);
+        elements.createPlaylistBtn.on('click', createPlaylist);
+        elements.closeDownloadModal.on('click', () => elements.downloadModal.addClass('hidden'));
+        elements.downloadLink.on('click', () => elements.downloadModal.removeClass('hidden'));
+
+        // Progress Bar
+        elements.progressContainer.on('click', seekSong);
+
+        // Audio Events
+        elements.player.on('timeupdate', updateProgress);
+        elements.player.on('ended', handleSongEnd);
+        elements.player.on('error', () => {
+            elements.status.text('Error loading song.');
+            setTimeout(() => elements.status.text(''), 2000);
+        });
+
+        // Settings Changes
+        $('#theme-toggle, #transparent-toggle, #mood-toggle, #theme-style, #font-size, #font-style, #progress-style, #progress-color').on('change', saveSettings);
+    }
+
+    // Search Functions
+    function clearSearch() {
+        elements.searchBox.val('');
+        elements.clearSearch.addClass('hidden');
+        elements.results.empty();
+        elements.status.text('');
+        showTab('home');
+        state.lastSearch = '';
+        state.pageIndex = 1;
+        state.resultsObjects = {};
+        loadAISuggestions();
+    }
+
+    function handleDirectURL() {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            doViTuneSearch(decodeURIComponent(hash), true);
+            showTab('search');
         }
     }
 
-    function loadSuggestions() {
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-        let suggestions = history.slice(0, 4);
-        if (suggestions.length < 4) {
-            const queries = ['pop hits', 'rock classics', 'bollywood top', 'chill vibes', 'trending songs'];
-            const randomQuery = queries[Math.floor(Math.random() * queries.length)];
-            searchSongs(randomQuery, true);
-            suggestions = suggestions.concat(songs.slice(0, 4 - suggestions.length));
+    async function doViTuneSearch(query, autoPlayFirst = false) {
+        elements.status.html('<span class="spinner"></span> Searching...');
+        elements.results.html(generateSkeletonCards(4));
+        state.lastSearch = query;
+        state.pageIndex = 1;
+
+        try {
+            let url = `${JIOSAAVN_API}?query=${encodeURIComponent(query)}&limit=40&page=${state.pageIndex}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+            const data = await response.json();
+            const results = data.data?.results || [];
+
+            state.songs = results
+                .filter(song => song.downloadUrl && song.downloadUrl[elements.bitrateSelect.val()])
+                .map(song => {
+                    const bitrateIndex = elements.bitrateSelect.val();
+                    let duration = parseInt(song.duration);
+                    let measuredTime = new Date(null);
+                    measuredTime.setSeconds(duration);
+                    let playTime = measuredTime.toISOString().substr(11, 8);
+                    if (playTime.startsWith('00:0')) playTime = playTime.slice(4);
+                    else if (playTime.startsWith('00:')) playTime = playTime.slice(3);
+
+                    return {
+                        id: song.id,
+                        full_name: song.name,
+                        title: song.name,
+                        album: song.album?.name || 'Unknown Album',
+                        artist: song.primaryArtists || 'Unknown Artist',
+                        duration: playTime,
+                        image: song.image[1]?.link || 'img/58964258.png',
+                        url: song.downloadUrl[bitrateIndex]?.link || '',
+                        year: song.year || 'Unknown',
+                        language: song.language || 'english'
+                    };
+                });
+
+            state.resultsObjects = {};
+            results.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
+
+            setTimeout(() => {
+                elements.status.text('');
+                if (state.songs.length === 0) {
+                    elements.results.html('<p class="text-sm text-gray-400">No results found. Try a different query.</p>');
+                    state.songs = [fallbackSong];
+                    return;
+                }
+                renderResults();
+                if (autoPlayFirst && state.songs.length > 0) {
+                    playSong(0);
+                }
+                loadAISuggestions();
+            }, 500);
+        } catch (error) {
+            console.error('Search error:', error);
+            elements.status.text('Failed to fetch songs. Using fallback song.');
+            state.songs = [fallbackSong];
+            renderResults();
+            setTimeout(() => elements.status.text(''), 2000);
         }
-        renderStaticSuggestions(suggestions);
+    }
+
+    function nextPage() {
+        if (!state.lastSearch) return;
+        state.pageIndex++;
+        elements.status.html('<span class="spinner"></span> Loading more...');
+
+        fetch(`${JIOSAAVN_API}?query=${encodeURIComponent(state.lastSearch)}&limit=40&page=${state.pageIndex}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const results = data.data?.results || [];
+                const newSongs = results
+                    .filter(song => song.downloadUrl && song.downloadUrl[elements.bitrateSelect.val()])
+                    .map(song => {
+                        const bitrateIndex = elements.bitrateSelect.val();
+                        let duration = parseInt(song.duration);
+                        let measuredTime = new Date(null);
+                        measuredTime.setSeconds(duration);
+                        let playTime = measuredTime.toISOString().substr(11, 8);
+                        if (playTime.startsWith('00:0')) playTime = playTime.slice(4);
+                        else if (playTime.startsWith('00:')) playTime = playTime.slice(3);
+
+                        return {
+                            id: song.id,
+                            full_name: song.name,
+                            title: song.name,
+                            album: song.album?.name || 'Unknown Album',
+                            artist: song.primaryArtists || 'Unknown Artist',
+                            duration: playTime,
+                            image: song.image[1]?.link || 'img/58964258.png',
+                            url: song.downloadUrl[bitrateIndex]?.link || '',
+                            year: song.year || 'Unknown',
+                            language: song.language || 'english'
+                        };
+                    });
+
+                results.forEach(song => {
+                    state.resultsObjects[song.id] = { track: song };
+                });
+
+                state.songs = [...state.songs, ...newSongs];
+                elements.status.text('');
+                renderResults();
+            })
+            .catch(error => {
+                console.error('Load more error:', error);
+                elements.status.text('Failed to load more songs.');
+                setTimeout(() => elements.status.text(''), 2000);
+            });
+    }
+
+    // Render Functions
+    function generateSkeletonCards(count) {
+        return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${Array(count).fill(`
+            <div class="song-card skeleton h-64 rounded-xl">
+                <img src="img/58964258.png" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
+                <div class="h-4 bg-gray-700 rounded mb-2"></div>
+                <div class="h-3 bg-gray-700 rounded"></div>
+            </div>
+        `).join('')}</div>`;
+    }
+
+    async function loadAISuggestions() {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const moodOff = settings.moodOff || false;
+        const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        let suggestions = [];
+
+        if (history.length > 0 && !moodOff) {
+            const lastSong = history[0];
+            try {
+                const response = await fetch(`${JIOSAAVN_API}?query=${encodeURIComponent(lastSong.artist)}&limit=4`);
+                if (response.ok) {
+                    const data = await response.json();
+                    suggestions = (data.data?.results || [])
+                        .filter(song => song.downloadUrl && song.downloadUrl[elements.bitrateSelect.val()])
+                        .map(song => {
+                            const bitrateIndex = elements.bitrateSelect.val();
+                            let duration = parseInt(song.duration);
+                            let measuredTime = new Date(null);
+                            measuredTime.setSeconds(duration);
+                            let playTime = measuredTime.toISOString().substr(11, 8);
+                            if (playTime.startsWith('00:0')) playTime = playTime.slice(4);
+                            else if (playTime.startsWith('00:')) playTime = playTime.slice(3);
+
+                            return {
+                                id: song.id,
+                                full_name: song.name,
+                                title: song.name,
+                                album: song.album?.name || 'Unknown Album',
+                                artist: song.primaryArtists || 'Unknown Artist',
+                                duration: playTime,
+                                image: song.image[1]?.link || 'img/58964258.png',
+                                url: song.downloadUrl[bitrateIndex]?.link || '',
+                                year: song.year || 'Unknown',
+                                language: song.language || 'english'
+                            };
+                        });
+                }
+            } catch (error) {
+                console.error('AI suggestions error:', error);
+            }
+        }
+
+        if (suggestions.length < 4) {
+            try {
+                const response = await fetch(`${JIOSAAVN_API}?query=trending&limit=4`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const additional = (data.data?.results || [])
+                        .filter(song => song.downloadUrl && song.downloadUrl[elements.bitrateSelect.val()])
+                        .map(song => {
+                            const bitrateIndex = elements.bitrateSelect.val();
+                            let duration = parseInt(song.duration);
+                            let measuredTime = new Date(null);
+                            measuredTime.setSeconds(duration);
+                            let playTime = measuredTime.toISOString().substr(11, 8);
+                            if (playTime.startsWith('00:0')) playTime = playTime.slice(4);
+                            else if (playTime.startsWith('00:')) playTime = playTime.slice(3);
+
+                            return {
+                                id: song.id,
+                                full_name: song.name,
+                                title: song.name,
+                                album: song.album?.name || 'Unknown Album',
+                                artist: song.primaryArtists || 'Unknown Artist',
+                                duration: playTime,
+                                image: song.image[1]?.link || 'img/58964258.png',
+                                url: song.downloadUrl[bitrateIndex]?.link || '',
+                                year: song.year || 'Unknown',
+                                language: song.language || 'english'
+                            };
+                        });
+                    suggestions = [...new Set([...suggestions, ...additional])].slice(0, 4);
+                }
+            } catch (error) {
+                console.error('Trending songs error:', error);
+                suggestions.push(fallbackSong);
+            }
+        }
+
+        state.songs = suggestions.length ? suggestions : [fallbackSong];
+        renderAISuggestionBar();
+    }
+
+    function renderAISuggestionBar() {
+        elements.aiSuggestionBar.empty();
+        if (!state.songs.length) {
+            elements.aiSuggestionBar.html('<p class="text-sm text-gray-400">No recommendations available.</p>');
+            return;
+        }
+        const html = `
+            <div class="flex space-x-4 overflow-x-auto no-scrollbar">
+                ${state.songs.map((song, index) => `
+                    <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-3 shadow-lg w-32 flex-shrink-0">
+                        <img src="${song.image}" alt="Song Image" class="w-full h-20 object-cover rounded-lg mb-2">
+                        <h3 class="text-sm font-bold truncate">${song.full_name}</h3>
+                        <p class="text-xs text-gray-400 truncate">${song.artist}</p>
+                        <button class="mt-2 bg-teal-500 text-white rounded-full py-1 px-2 w-full hover:bg-teal-600 text-xs play-song-btn" data-index="${index}"><i class="fa fa-play mr-1"></i>Play</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        elements.aiSuggestionBar.html(html);
+        elements.aiSuggestionBar.find('.play-song-btn').on('click', function() {
+            playSong($(this).data('index'));
+        });
+    }
+
+    function renderResults() {
+        elements.results.empty();
+        if (!state.songs.length) {
+            elements.results.html('<p class="text-sm text-gray-400">No results found.</p>');
+            return;
+        }
+        const html = generateSongCards(state.songs);
+        elements.results.html(html);
+        bindCardEventListeners(elements.results);
     }
 
     function loadHomeContent() {
-        if (!elements.homeContent) return;
-        const likedSongs = JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || '[]');
-        const offlineSongs = JSON.parse(localStorage.getItem('offlineSongs') || '[]');
-        const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
 
-        elements.homeContent.innerHTML = `
-            <h2 class="text-xl font-semibold mb-4">Recently Played</h2>
+        const html = `
+            <h2 class="text-lg font-bold mb-4">Recently Played</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                ${history.slice(0, 4).map((song, index) => `
-                    <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
-                        <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                        <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                        <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                        <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                    </div>
-                `).join('')}
+                ${history.length ? generateSongCards(history.slice(0, 4), 'play-recent-btn') : '<p class="text-sm text-gray-500">No recently played songs.</p>'}
             </div>
-            <h2 class="text-xl font-semibold mb-4">Liked Songs</h2>
+            <h2 class="text-lg font-bold mb-4">Liked Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                ${likedSongs.slice(0, 4).map((song, index) => `
-                    <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
-                        <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                        <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                        <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                        <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playLikedSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                    </div>
-                `).join('')}
+                ${likes.length ? generateSongCards(likes.slice(0, 8), 'play-like-btn-song') : '<p class="text-sm text-gray-500">No liked songs yet.</p>'}
             </div>
-            <h2 class="text-xl font-semibold mb-4">Offline Songs</h2>
+            <h2 class="text-lg font-bold mb-4">Offline Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                ${offlineSongs.slice(0, 4).map((song, index) => `
-                    <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
-                        <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                        <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                        <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                        <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playOffline(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                    </div>
-                `).join('')}
+                ${offlineSongs.length ? generateSongCards(offlineSongs.slice(0, 4), 'play-offline-btn') : '<p class="text-sm text-gray-500">No offline songs.</p>'}
             </div>
-            <h2 class="text-xl font-semibold mb-4">Playlists</h2>
+            <h2 class="text-lg font-bold mb-4">Playlists</h2>
             <div class="space-y-4">
-                ${Object.keys(playlists).map(name => `
+                ${Object.keys(playlists).length ? Object.keys(playlists).map(name => `
                     <div>
-                        <h3 class="text-lg font-bold truncate">${name}</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                            ${playlists[name].slice(0, 4).map((song, index) => `
-                                <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
-                                    <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                                    <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                                    <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                                    <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playPlaylistSong('${name}', ${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                                </div>
-                            `).join('')}
+                        <div class="flex items-center mb-4">
+                            <h3 class="text-base font-bold truncate">${name}</h3>
+                            <button class="text-red-500 hover:text-red-600 ml-2 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            ${playlists[name].length ? generateSongCards(playlists[name].slice(0, 4), 'play-playlist-btn', name) : '<p class="text-sm text-gray-500">Empty playlist.</p>'}
+                        </div>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-600">No playlists yet.</p>'}
+            </div>
+        `;
+        elements.homeContent.html(html);
+        bindHomeEventListeners();
+    }
+
+    function generateSongCards(songs, playBtnClass = 'play-song-btn', playlistName = null) {
+        return `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                ${songs.map((song, index) => `
+                    <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
+                        <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
+                        <h3 class="text-sm font-bold truncate">${song.full_name}</h3>
+                        <p class="text-xs text-gray-400 truncate">${song.album}</p>
+                        <p class="text-xs text-gray-400 truncate">${song.artist}</p>
+                        <p class="text-xs text-gray-400">${song.duration} | ${song.year}</p>
+                        <div class="mt-2 space-y-2">
+                            <button class="bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm ${playBtnClass}" data-index="${index}" ${playlistName ? `data-playlist="${playlistName}"` : ''}><i class="fa fa-play mr-1"></i>Play</button>
+                            <button class="bg-blue-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-blue-600 text-sm play-next-btn" data-song='${JSON.stringify(song)}'><i class="fa fa-step-forward mr-1"></i>Play Next</button>
+                            <button class="bg-red-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-red-600 like-btn text-sm" data-id="${song.id}"><i class="fa fa-heart mr-1"></i><span>${isLiked(song.id) ? 'Unlike' : 'Like'}</span></button>
+                            <button class="bg-yellow-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-yellow-600 text-sm playlist-btn" data-song='${JSON.stringify(song)}'><i class="fa fa-plus mr-1"></i>Add to Playlist</button>
+                            <button class="bg-purple-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-purple-600 text-sm download-btn" data-id="${song.id}"><i class="fa fa-download mr-1"></i>Download</button>
                         </div>
                     </div>
                 `).join('')}
@@ -301,337 +489,215 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function renderFeaturedSong(song) {
-        if (!elements.featuredSong) return;
-        elements.featuredSong.innerHTML = `
-            <div class="text-center">
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-56 object-cover rounded-lg mb-4">
-                <h3 class="text-lg font-bold truncate">${song.full_name}</h3>
-                <p class="text-sm text-gray-400 truncate">${song.album}</p>
-                <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                <p class="text-sm text-gray-400">${song.duration} | ${song.year}</p>
-                <div class="mt-4 space-x-2">
-                    <button class="bg-teal-500 text-white rounded-full py-1.5 px-3 hover:bg-teal-600 text-sm" onclick="playSong(0)"><i class="fa fa-play mr-1"></i>Play</button>
-                    <button class="bg-blue-500 text-white rounded-full py-1.5 px-3 hover:bg-blue-600 text-sm" onclick="playNextSong('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}')"><i class="fa fa-step-forward mr-1"></i>Play Next</button>
-                    <button class="bg-red-500 text-white rounded-full py-1.5 px-3 hover:bg-red-600 like-btn text-sm" data-id="${song.id}" onclick="toggleLike('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}', this)"><i class="fa fa-heart mr-1"></i><span>Like</span></button>
-                    <button class="bg-purple-500 text-white rounded-full py-1.5 px-3 hover:bg-purple-600 text-sm" onclick="downloadSong('${song.id}', '${song.full_name}', '${song.download_url}')"><i class="fa fa-download mr-1"></i>Download</button>
+    function renderLikes() {
+        elements.likesList.empty();
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        if (!likes.length) {
+            elements.likesList.html('<p class="text-sm text-gray-500">No liked songs yet.</p>');
+            return;
+        }
+        const html = generateSongCards(likes, 'play-like-btn');
+        elements.likesList.html(html);
+        bindCardEventListeners(elements.likesList);
+    }
+
+    function renderPlaylists() {
+        elements.playlistsList.empty();
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        if (!Object.keys(playlists).length) {
+            elements.playlistsList.html('<p class="text-sm text-gray-500">No playlists yet.</p>');
+            return;
+        }
+        const html = `
+            ${Object.keys(playlists).map(name => `
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold truncate">${name}</h3>
+                        <button class="text-red-500 hover:text-red-600 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        ${playlists[name].length ? generateSongCards(playlists[name], 'play-playlist-btn', name) : '<p class="text-sm text-gray-500">Empty playlist.</p>'}
+                    </div>
                 </div>
-            </div>
+            `).join('')}
         `;
-        updateLikeButton(song.id, elements.featuredSong.querySelector(`.like-btn[data-id="${song.id}"]`));
+        elements.playlistsList.html(html);
+        bindPlaylistEventListeners();
     }
 
-    function renderStaticSuggestions(suggestions) {
-        if (!elements.suggestions || !elements.suggestionBar) return;
-        elements.suggestions.innerHTML = '';
-        elements.suggestionBar.innerHTML = '';
-        suggestions.forEach((song, index) => {
-            const card = document.createElement('div');
-            card.className = 'song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg';
-            card.innerHTML = `
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-            `;
-            elements.suggestions.appendChild(card);
-
-            const barCard = document.createElement('div');
-            barCard.className = 'song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-3 shadow-lg w-32 flex-shrink-0';
-            barCard.innerHTML = `
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-20 object-cover rounded-lg mb-2">
-                <h3 class="text-sm font-bold truncate">${song.full_name}</h3>
-                <p class="text-xs text-gray-400 truncate">${song.artist}</p>
-                <button class="mt-2 bg-teal-500 text-white rounded-full py-1 px-2 w-full hover:bg-teal-600 text-xs" onclick="playSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-            `;
-            elements.suggestionBar.appendChild(barCard);
-        });
-        if (suggestions.length === 0) {
-            elements.suggestions.innerHTML = '<p>No suggestions available.</p>';
-            elements.suggestionBar.innerHTML = '<p>No suggestions available.</p>';
+    function renderOffline() {
+        elements.offlineList.empty();
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        if (!offlineSongs.length) {
+            elements.offlineList.html('<p class="text-sm text-gray-500">No offline songs.</p>');
+            return;
         }
+        const html = generateSongCards(offlineSongs, 'play-offline-btn');
+        elements.offlineList.html(html);
+        bindCardEventListeners(elements.offlineList);
     }
 
-    function renderResults(songs) {
-        if (!elements.results) return;
-        elements.results.innerHTML = '';
-        songs.forEach((song, index) => {
-            const div = document.createElement('div');
-            div.className = 'song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg';
-            div.innerHTML = `
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                <p class="text-sm text-gray-400 truncate">${song.album}</p>
-                <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                <p class="text-sm text-gray-400">${song.duration} | ${song.year}</p>
-                <div class="mt-2 space-y-2">
-                    <button class="bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                    <button class="bg-blue-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-blue-600 text-sm" onclick="playNextSong('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}')"><i class="fa fa-step-forward mr-1"></i>Play Next</button>
-                    <button class="bg-red-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-red-600 like-btn text-sm" data-id="${song.id}" onclick="toggleLike('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}', this)"><i class="fa fa-heart mr-1"></i><span>Like</span></button>
-                    <button class="bg-yellow-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-yellow-600 text-sm" onclick="showPlaylistModal('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}')"><i class="fa fa-plus mr-1"></i>Add to Playlist</button>
-                </div>
-            `;
-            elements.results.appendChild(div);
-            updateLikeButton(song.id, div.querySelector(`.like-btn[data-id="${song.id}"]`));
+    // Event Binding for Cards
+    function bindCardEventListeners($container) {
+        $container.find('.play-song-btn').on('click', function() {
+            playSong($(this).data('index'));
+        });
+        $container.find('.play-like-btn').on('click', function() {
+            playLike($(this).data('index'));
+        });
+        $container.find('.play-offline-btn').on('click', function() {
+            playOffline($(this).data('index'));
+        });
+        $container.find('.play-playlist-btn').on('click', function() {
+            const playlist = $(this).data('playlist');
+            const index = $(this).data('index');
+            playPlaylistSong(playlist, index);
+        });
+        $container.find('.play-next-btn').on('click', function() {
+            const song = JSON.parse($(this).data('song'));
+            queueSong(song);
+        });
+        $container.find('.like-btn').on('click', function() {
+            const songId = $(this).data('id');
+            toggleLike(songId, $(this));
+        });
+        $container.find('.playlist-btn').on('click', function() {
+            const song = JSON.parse($(this).data('song'));
+            showPlaylistModal(song);
+        });
+        $container.find('.download-btn').on('click', function() {
+            const songId = $(this).data('id');
+            addDownload(songId);
         });
     }
 
-    async function downloadSong(songId, songName, downloadUrl) {
-        if (!downloadUrl) {
-            showStatus('No download URL available for this song.', 3000);
-            return;
-        }
-        showStatus('<span class="spinner"></span> Downloading...');
-        try {
-            const response = await fetch(downloadUrl);
-            if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${songName.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showStatus('Download complete!', 2000);
-            await cacheSong({ id: songId, full_name: songName, download_url: downloadUrl });
-        } catch (error) {
-            showStatus('Failed to download song.', 3000);
-            console.error('Download error:', error);
-        }
+    function bindHomeEventListeners() {
+        bindCardEventListeners(elements.homeContent);
+        elements.homeContent.find('.delete-playlist-btn').on('click', function() {
+            deletePlaylist($(this).data('name'));
+        });
     }
 
-    async function cacheSong(song) {
-        try {
-            const cache = await caches.open(CACHE_NAME);
-            const response = await fetch(song.download_url);
-            if (response.ok) {
-                await cache.put(song.download_url, response.clone());
-                const offlineSongs = JSON.parse(localStorage.getItem('offlineSongs') || '[]');
-                if (!offlineSongs.some(s => s.id === song.id)) {
-                    offlineSongs.push(song);
-                    localStorage.setItem('offlineSongs', JSON.stringify(offlineSongs));
-                    renderOffline();
-                }
-            }
-        } catch (error) {
-            console.error('Cache error:', error);
-        }
+    function bindPlaylistEventListeners() {
+        bindCardEventListeners(elements.playlistsList);
+        elements.playlistsList.find('.delete-playlist-btn').on('click', function() {
+            deletePlaylist($(this).data('name'));
+        });
     }
 
-    window.togglePlayer = () => {
-        const audioPlayerContent = document.querySelector('.audio-player-content');
-        if (!audioPlayerContent) return;
-        audioPlayerContent.classList.toggle('expanded');
-        audioPlayerContent.querySelector('.expanded').classList.toggle('hidden');
-        audioPlayerContent.querySelector('.compact').classList.toggle('hidden');
-        if (audioPlayerContent.classList.contains('expanded')) {
-            elements.playPauseBtnExpanded.innerHTML = elements.playPauseBtn.innerHTML;
-        }
-    };
-
-    window.playSong = async (index) => {
-        if (index < 0 || index >= songs.length) {
-            showStatus('Invalid song index.', 3000);
-            return;
-        }
-        const song = songs[index];
-        if (!song.download_url) {
-            showStatus('No playable URL available for this song.', 3000);
-            return;
-        }
-        currentSongIndex = index;
+    // Playback Functions
+    async function playSong(index) {
+        if (index < 0 || index >= state.songs.length) return;
+        const song = state.songs[index];
+        state.currentSongIndex = index;
+        state.currentSong = song;
         updateHistory(song);
-
+        await cacheSong(song);
+        elements.audioSource.attr('src', song.url);
+        document.title = `${song.full_name} - ${song.album}`;
+        elements.playerName.text(song.full_name);
+        elements.playerNameExpanded.text(song.full_name);
+        elements.playerAlbum.text(song.album);
+        elements.playerAlbumExpanded.text(song.album);
+        elements.playerImage.attr('src', song.image);
+        elements.playerImageExpanded.attr('src', song.image);
+        elements.audioPlayer.removeClass('hidden');
+        elements.player[0].load();
         try {
-            const cache = await caches.open(CACHE_NAME);
-            const cachedResponse = await cache.match(song.download_url);
-            let srcUrl = song.download_url;
-
-            if (cachedResponse) {
-                const blob = await cachedResponse.blob();
-                srcUrl = URL.createObjectURL(blob);
-            } else {
-                const testResponse = await fetch(song.download_url, { method: 'HEAD' });
-                if (!testResponse.ok) throw new Error(`Invalid URL: ${testResponse.status}`);
-                await cacheSong(song);
-            }
-
-            elements.audioSource.src = srcUrl;
-            elements.playerName.textContent = song.full_name;
-            elements.playerNameExpanded.textContent = song.full_name;
-            elements.playerAlbum.textContent = song.album;
-            elements.playerAlbumExpanded.textContent = song.album;
-            elements.playerImage.src = song.image_url;
-            elements.playerImageExpanded.src = song.image_url;
-            elements.audioPlayer.classList.remove('hidden');
-
-            elements.player.load();
-            const playPromise = elements.player.play();
-            if (playPromise !== undefined) {
-                await playPromise;
-                elements.playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
-                elements.playPauseBtnExpanded.innerHTML = '<i class="fa fa-pause"></i>';
-                updateProgress();
-                updateLikeButton(song.id, elements.likeBtn);
+            await elements.player[0].play();
+            state.isPlaying = true;
+            updatePlayPauseButtons();
+            updateLikeButton();
+            if (!elements.audioPlayerContent.hasClass('expanded')) {
+                togglePlayer();
             }
         } catch (error) {
-            showStatus('Error playing song. Please try again.', 3000);
-            console.error('Play song error:', error);
-            elements.audioPlayer.classList.add('hidden');
+            elements.status.text('Failed to play song.');
+            console.error('Playback error:', error);
+            setTimeout(() => elements.status.text(''), 2000);
         }
-    };
-
-    window.playNextSong = (id, full_name, album, artist, image_url, download_url, duration, year) => {
-        const song = { id, full_name, album, artist, image_url, download_url, duration, year };
-        queue.splice(currentSongIndex + 1, 0, song);
-        showStatus(`${full_name} added to play next!`, 1000);
-    };
-
-    function updateHistory(song) {
-        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-        history = history.filter(s => s.id !== song.id);
-        history.unshift(song);
-        if (history.length > 50) history.pop();
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        loadSuggestions();
+        loadAISuggestions();
     }
 
-    [elements.playPauseBtn, elements.playPauseBtnExpanded].forEach(btn => {
-        if (btn) {
-            btn.addEventListener('click', async () => {
-                if (elements.player.paused) {
-                    try {
-                        await elements.player.play();
-                        elements.playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
-                        elements.playPauseBtnExpanded.innerHTML = '<i class="fa fa-pause"></i>';
-                    } catch (error) {
-                        showStatus('Failed to resume playback.', 3000);
-                        console.error('Play error:', error);
-                    }
-                } else {
-                    elements.player.pause();
-                    elements.playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
-                    elements.playPauseBtnExpanded.innerHTML = '<i class="fa fa-play"></i>';
-                }
+    function togglePlayPause() {
+        if (state.isPlaying) {
+            elements.player[0].pause();
+            state.isPlaying = false;
+        } else {
+            elements.player[0].play().then(() => {
+                state.isPlaying = true;
+            }).catch(error => {
+                elements.status.text('Failed to play song.');
+                console.error('Playback error:', error);
+                setTimeout(() => elements.status.text(''), 2000);
             });
         }
-    });
-
-    if (elements.prevBtn) {
-        elements.prevBtn.addEventListener('click', () => {
-            if (currentSongIndex > 0) {
-                playSong(currentSongIndex - 1);
-            } else {
-                showStatus('No previous song available.', 2000);
-            }
-        });
+        updatePlayPauseButtons();
     }
 
-    if (elements.nextBtn) {
-        elements.nextBtn.addEventListener('click', () => {
-            if (queue.length > currentSongIndex + 1) {
-                currentSongIndex++;
-                songs[currentSongIndex] = queue[currentSongIndex];
-                playSong(currentSongIndex);
-            } else if (currentSongIndex < songs.length - 1) {
-                playSong(currentSongIndex + 1);
-            } else {
-                showStatus('No next song available.', 2000);
-            }
-        });
+    function updatePlayPauseButtons() {
+        const icon = state.isPlaying ? 'fa-pause' : 'fa-play';
+        elements.playPauseBtn.html(`<i class="fa ${icon}"></i>`);
+        elements.playPauseBtnExpanded.html(`<i class="fa ${icon}"></i>`);
     }
 
-    if (elements.player) {
-        elements.player.addEventListener('ended', () => {
-            if (isLooping) {
-                playSong(currentSongIndex);
-            } else if (queue.length > currentSongIndex + 1) {
-                currentSongIndex++;
-                songs[currentSongIndex] = queue[currentSongIndex];
-                playSong(currentSongIndex);
-            } else if (currentSongIndex < songs.length - 1) {
-                playSong(currentSongIndex + 1);
-            } else {
-                elements.playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
-                elements.playPauseBtnExpanded.innerHTML = '<i class="fa fa-play"></i>';
-                elements.audioPlayer.classList.add('hidden');
-            }
-        });
-    }
-
-    if (elements.loopBtn) {
-        elements.loopBtn.addEventListener('click', () => {
-            isLooping = !isLooping;
-            elements.player.loop = isLooping;
-            elements.loopBtn.classList.toggle('active', isLooping);
-            showStatus(isLooping ? 'Loop enabled' : 'Loop disabled', 1000);
-        });
-    }
-
-    window.toggleLike = (id, full_name, album, artist, image_url, download_url, duration, year, element) => {
-        const likedSongs = JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || '[]');
-        const isLiked = likedSongs.some(song => song.id === id);
-        if (isLiked) {
-            const updatedLikedSongs = likedSongs.filter(song => song.id !== id);
-            localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(updatedLikedSongs));
-            showStatus('Removed from Liked Songs!', 1000);
-            element.querySelector('span').textContent = 'Like';
-            updateLikeButton(id, element);
-        } else {
-            likedSongs.push({ id, full_name, album, artist, image_url, download_url, duration, year });
-            localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(likedSongs));
-            showStatus('Added to Liked Songs!', 1000);
-            element.querySelector('span').textContent = 'Unlike';
-            updateLikeButton(id, element);
+    function playPreviousSong() {
+        if (state.currentSongIndex > 0) {
+            playSong(state.currentSongIndex - 1);
         }
-        if (!document.getElementById('liked-songs-tab').classList.contains('hidden')) renderLikedSongs();
-    };
-
-    function updateLikeButton(songId, btn) {
-        const likedSongs = JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || '[]');
-        const isLiked = likedSongs.some(f => f.id === songId);
-        btn.classList.toggle('liked', isLiked);
-        btn.classList.toggle('bg-teal-500', !isLiked);
-        btn.classList.toggle('bg-red-500', isLiked);
-        btn.querySelector('span').textContent = isLiked ? 'Unlike' : 'Like';
     }
 
-    if (elements.likeBtn) {
-        elements.likeBtn.addEventListener('click', () => {
-            const song = songs[currentSongIndex];
-            if (!song) return;
-            toggleLike(song.id, song.full_name, song.album, song.artist, song.image_url, song.download_url, song.duration, song.year, elements.likeBtn);
-        });
+    function playNextSong() {
+        if (state.queue.length > state.currentSongIndex + 1) {
+            state.currentSongIndex++;
+            state.songs[state.currentSongIndex] = state.queue[state.currentSongIndex];
+            playSong(state.currentSongIndex);
+        } else if (state.currentSongIndex < state.songs.length - 1) {
+            playSong(state.currentSongIndex + 1);
+        }
     }
 
-    if (elements.playlistBtn) {
-        elements.playlistBtn.addEventListener('click', () => {
-            const song = songs[currentSongIndex];
-            if (!song) return;
-            showPlaylistModal(song.id, song.full_name, song.album, song.artist, song.image_url, song.download_url, song.duration, song.year);
-        });
+    function queueSong(song) {
+        state.queue.splice(state.currentSongIndex + 1, 0, song);
+        elements.status.text(`${song.full_name} added to play next!`);
+        setTimeout(() => elements.status.text(''), 2000);
+    }
+
+    function handleSongEnd() {
+        if (state.isLooping) {
+            playSong(state.currentSongIndex);
+        } else if (state.queue.length > state.currentSongIndex + 1) {
+            playNextSong();
+        } else if (state.currentSongIndex < state.songs.length - 1) {
+            playSong(state.currentSongIndex + 1);
+        } else {
+            state.isPlaying = false;
+            updatePlayPauseButtons();
+        }
+    }
+
+    function toggleLoop() {
+        state.isLooping = !state.isLooping;
+        elements.player[0].loop = state.isLooping;
+        elements.loopBtn.toggleClass('active', state.isLooping);
+        elements.status.text(state.isLooping ? 'Loop enabled' : 'Loop disabled');
+        setTimeout(() => elements.status.text(''), 2000);
     }
 
     function updateProgress() {
-        const update = () => {
-            const current = elements.player.currentTime;
-            const durationTime = elements.player.duration || 0;
-            const percentage = durationTime ? (current / durationTime) * 100 : 0;
-            elements.progressBar.style.width = `${percentage}%`;
-            elements.currentTime.textContent = formatTime(current);
-            elements.duration.textContent = formatTime(durationTime);
-        };
-        elements.player.addEventListener('timeupdate', update);
-        return update;
+        const current = elements.player[0].currentTime;
+        const duration = elements.player[0].duration || 0;
+        const percentage = duration ? (current / duration) * 100 : 0;
+        elements.progressBar.css('width', percentage + '%');
+        elements.currentTime.text(formatTime(current));
+        elements.duration.text(formatTime(duration));
     }
 
-    if (elements.progressContainer) {
-        elements.progressContainer.addEventListener('click', (e) => {
-            const width = elements.progressContainer.offsetWidth;
-            const clickX = e.offsetX;
-            const percentage = clickX / width;
-            elements.player.currentTime = percentage * elements.player.duration;
-        });
+    function seekSong(e) {
+        const width = elements.progressContainer.width();
+        const clickX = e.offsetX;
+        const percentage = clickX / width;
+        elements.player[0].currentTime = percentage * elements.player[0].duration;
     }
 
     function formatTime(seconds) {
@@ -640,300 +706,329 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     }
 
-    if (elements.lyricsBtn) {
-        elements.lyricsBtn.addEventListener('click', () => {
-            const song = songs[currentSongIndex];
-            if (!song) return;
-            fetchLyrics(song.full_name, song.artist);
-            elements.lyricsModal.classList.remove('hidden');
-        });
+    // History and Caching
+    function updateHistory(song) {
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        history = history.filter(s => s.id !== song.id);
+        history.unshift(song);
+        if (history.length > 50) history.pop();
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        if ($('#home-tab').is(':visible')) loadHomeContent();
     }
 
-    window.closeLyrics = () => {
-        elements.lyricsModal.classList.add('hidden');
-        if (lyricsInterval) {
-            clearInterval(lyricsInterval);
+    async function cacheSong(song) {
+        try {
+            const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+            if (!offlineSongs.some(s => s.id === song.id)) {
+                offlineSongs.push(song);
+                localStorage.setItem(STORAGE_KEYS.OFFLINE, JSON.stringify(offlineSongs));
+            }
+        } catch (error) {
+            console.error('Cache error:', error);
         }
-    };
-
-    function fetchLyrics(title, artist) {
-        elements.lyricsContent.innerHTML = '<p>Loading lyrics...</p>';
-        setTimeout(() => {
-            const lines = mockLyrics.default;
-            displayLyrics(lines);
-            startLyricsSync(lines);
-        }, 1000);
     }
 
-    function displayLyrics(lines) {
-        elements.lyricsContent.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'lyrics-wrapper';
-        wrapper.style.transform = 'translateY(0)';
-        lines.forEach((line, index) => {
-            const p = document.createElement('p');
-            p.className = 'lyric-line';
-            p.textContent = line || '[Empty Line]';
-            p.dataset.index = index;
-            wrapper.appendChild(p);
-        });
-        elements.lyricsContent.appendChild(wrapper);
+    // Like Functions
+    function isLiked(songId) {
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        return likes.some(f => f.id === songId);
     }
 
-    function startLyricsSync(lines) {
-        if (lyricsInterval) clearInterval(lyricsInterval);
-        const lineDuration = (elements.player.duration || 180) / Math.max(lines.length, 1);
-        let currentLine = 0;
-        lyricsInterval = setInterval(() => {
-            const currentTime = elements.player.currentTime;
-            currentLine = Math.floor(currentTime / lineDuration);
-            const lyricLines = document.querySelectorAll('.lyric-line');
-            lyricLines.forEach(line => {
-                line.classList.remove('active');
-                line.style.opacity = '0.5';
-                line.style.transform = 'scale(1)';
-            });
-            const activeLine = document.querySelector(`.lyric-line[data-index="${currentLine}"]`);
-            if (activeLine) {
-                activeLine.classList.add('active');
-                activeLine.style.opacity = '1';
-                activeLine.style.transform = 'scale(1.05)';
-                const offset = activeLine.offsetTop - elements.lyricsContent.offsetHeight / 2 + activeLine.offsetHeight / 2;
-                document.querySelector('.lyrics-wrapper').style.transform = `translateY(${-offset}px)`;
-            }
-            if (elements.player.paused || elements.player.ended) {
-                clearInterval(lyricsInterval);
-            }
-        }, 100);
+    function toggleLike(songId, $btn) {
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        const song = state.songs.find(s => s.id === songId) || state.resultsObjects[songId]?.track;
+        if (!song) return;
+
+        const isLikedSong = likes.some(f => f.id === songId);
+        if (isLikedSong) {
+            const updatedLikes = likes.filter(f => f.id !== songId);
+            localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(updatedLikes));
+            $btn.find('span').text('Like');
+            $btn.removeClass('text-red-500 liked').addClass('text-teal-500');
+            elements.status.text('Unliked!');
+        } else {
+            const songData = {
+                id: song.id,
+                full_name: song.name || song.full_name,
+                title: song.name || song.title,
+                album: song.album?.name || song.album || 'Unknown Album',
+                artist: song.primaryArtists || song.artist || 'Unknown Artist',
+                duration: song.duration || state.songs.find(s => s.id === songId)?.duration || '3:00',
+                image: song.image[1]?.link || song.image || 'img/58964258.png',
+                url: song.downloadUrl?.[elements.bitrateSelect.val()]?.link || song.url || '',
+                year: song.year || 'Unknown',
+                language: song.language || 'english'
+            };
+            likes.push(songData);
+            localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
+            $btn.find('span').text('Unlike');
+            $btn.removeClass('text-teal-500').addClass('text-red-500 liked');
+            elements.status.text('Liked!');
+        }
+        setTimeout(() => elements.status.text(''), 2000);
+        if ($('#likes-tab').is(':visible')) renderLikes();
+        updateLikeButton();
     }
 
-    if (elements.lyricsModal) {
-        elements.lyricsModal.addEventListener('click', (e) => {
-            if (e.target === elements.lyricsModal) {
-                closeLyrics();
-            }
-        });
+    function toggleLikeCurrentSong() {
+        if (!state.currentSong) return;
+        toggleLike(state.currentSong.id, elements.likeBtn);
     }
 
-    function renderLikedSongs() {
-        if (!elements.likedSongsList) return;
-        elements.likedSongsList.innerHTML = '';
-        const likedSongs = JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || '[]');
-        likedSongs.forEach((song, index) => {
-            const div = document.createElement('div');
-            div.className = 'song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg';
-            div.innerHTML = `
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                <p class="text-sm text-gray-400 truncate">${song.album}</p>
-                <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                <p class="text-sm text-gray-400">${song.duration} | ${song.year}</p>
-                <div class="mt-2 space-y-2">
-                    <button class="bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playLikedSong(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                    <button class="bg-blue-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-blue-600 text-sm" onclick="playNextSong('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}')"><i class="fa fa-step-forward mr-1"></i>Play Next</button>
-                    <button class="bg-red-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-red-600 like-btn text-sm" data-id="${song.id}" onclick="toggleLike('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}', this)"><i class="fa fa-heart mr-1"></i><span>Unlike</span></button>
-                </div>
-            `;
-            elements.likedSongsList.appendChild(div);
-            updateLikeButton(song.id, div.querySelector(`.like-btn[data-id="${song.id}"]`));
-        });
+    function updateLikeButton() {
+        if (!state.currentSong) return;
+        const isLikedSong = isLiked(state.currentSong.id);
+        elements.likeBtn.toggleClass('liked', isLikedSong)
+                       .toggleClass('text-teal-500', !isLikedSong)
+                       .toggleClass('text-red-500', isLikedSong);
+        elements.likeBtn.find('span').text(isLikedSong ? 'Unlike' : 'Like');
     }
 
-    window.playLikedSong = (index) => {
-        songs = JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || '[]');
-        playSong(index);
-    };
-
-    window.createPlaylist = () => {
+    // Playlist Functions
+    function createPlaylist() {
         const name = prompt('Enter playlist name:');
         if (!name) return;
-        const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         playlists[name] = playlists[name] || [];
-        localStorage.setItem('playlists', JSON.stringify(playlists));
+        localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
         renderPlaylists();
-    };
-
-    window.showPlaylistModal = (id, full_name, album, artist, image_url, download_url, duration, year) => {
-        const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
-        const playlistOptions = document.getElementById('playlist-options');
-        playlistOptions.innerHTML = '';
-        Object.keys(playlists).forEach(name => {
-            const li = document.createElement('li');
-            li.className = 'bg-gray-700 bg-opacity-50 rounded-lg p-2 cursor-pointer hover:bg-teal-500 text-sm';
-            li.textContent = name;
-            li.onclick = () => addToPlaylist(name, id, full_name, album, artist, image_url, download_url, duration, year);
-            playlistOptions.appendChild(li);
-        });
-        document.getElementById('playlistModal').classList.remove('hidden');
-    };
-
-    window.addToPlaylist = (name, id, full_name, album, artist, image_url, download_url, duration, year) => {
-        const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
-        const song = { id, full_name, album, artist, image_url, download_url, duration, year };
-        if (!playlists[name].some(s => s.id === id)) {
-            playlists[name].push(song);
-            localStorage.setItem('playlists', JSON.stringify(playlists));
-            showStatus(`Added ${full_name} to ${name}!`, 1000);
-        } else {
-            showStatus(`${full_name} is already in ${name}!`, 1000);
-        }
-        document.getElementById('playlistModal').classList.add('hidden');
-        if (!document.getElementById('playlists-tab').classList.contains('hidden')) renderPlaylists();
-    };
-
-    function parseDuration(duration) {
-        const [minutes, seconds] = duration.split(':').map(Number);
-        return minutes * 60 + seconds;
+        elements.status.text(`Playlist "${name}" created!`);
+        setTimeout(() => elements.status.text(''), 2000);
     }
 
-    function renderPlaylists(sortBy = 'name') {
-        if (!elements.playlistsList) return;
-        elements.playlistsList.innerHTML = '';
-        const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
-        const playlistNames = Object.keys(playlists);
-        if (sortBy === 'name') {
-            playlistNames.sort();
-        } else if (sortBy === 'duration') {
-            playlistNames.sort((a, b) => {
-                const totalDurationA = playlists[a].reduce((sum, song) => sum + parseDuration(song.duration), 0);
-                const totalDurationB = playlists[b].reduce((sum, song) => sum + parseDuration(song.duration), 0);
-                return totalDurationB - totalDurationA;
+    function showPlaylistModal(song) {
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        elements.playlistOptions.empty();
+        if (!Object.keys(playlists).length) {
+            elements.playlistOptions.html('<p class="text-sm text-gray-500">No playlists available.</p>');
+        } else {
+            Object.keys(playlists).forEach(name => {
+                const html = `
+                    <li class="bg-gray-700 bg-opacity-50 rounded-lg p-2 cursor-pointer hover:bg-teal-500 text-sm add-to-playlist-btn" data-playlist="${name}" data-song='${JSON.stringify(song)}'>${name}</li>
+                `;
+                elements.playlistOptions.append(html);
+            });
+            elements.playlistOptions.find('.add-to-playlist-btn').on('click', function() {
+                const playlist = $(this).data('playlist');
+                const songData = JSON.parse($(this).data('song'));
+                addToPlaylist(playlist, songData);
             });
         }
-
-        playlistNames.forEach(name => {
-            const div = document.createElement('div');
-            div.className = 'mb-6';
-            div.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold truncate">${name}</h3>
-                    <div class="flex space-x-2">
-                        <button class="text-red-500 hover:text-red-600 text-sm" onclick="deletePlaylist('${name}')"><i class="fa fa-trash"></i></button>
-                        <select class="bg-gray-700 bg-opacity-50 text-white rounded-lg py-1 px-2 text-sm" onchange="renderPlaylists(this.value)">
-                            <option value="name">Sort by Name</option>
-                            <option value="duration">Sort by Duration</option>
-                            <option value="date">Sort by Date</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                    ${playlists[name].map((song, index) => `
-                        <div class="song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg">
-                            <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                            <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                            <p class="text-sm text-gray-400 truncate">${song.album}</p>
-                            <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                            <p class="text-sm text-gray-400">${song.duration} | ${song.year}</p>
-                            <div class="mt-2 space-y-2">
-                                <button class="bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playPlaylistSong('${name}', ${index})"><i class="fa fa-play mr-1"></i>Play</button>
-                                <button class="bg-blue-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-blue-600 text-sm" onclick="playNextSong('${song.id}', '${song.full_name}', '${song.album}', '${song.artist}', '${song.image_url}', '${song.download_url}', '${song.duration}', '${song.year}')"><i class="fa fa-step-forward mr-1"></i>Play Next</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            elements.playlistsList.appendChild(div);
-        });
+        elements.playlistModal.removeClass('hidden');
     }
 
-    window.deletePlaylist = (name) => {
-        if (confirm(`Delete ${name} playlist?`)) {
-            const playlists = JSON.parse(localStorage.getItem('playlists') || '{}');
-            delete playlists[name];
-            localStorage.setItem('playlists', JSON.stringify(playlists));
-            renderPlaylists();
-        }
-    };
+    function showPlaylistModalCurrentSong() {
+        if (!state.currentSong) return;
+        showPlaylistModal(state.currentSong);
+    }
 
-    window.playPlaylistSong = (name, index) => {
-        songs = JSON.parse(localStorage.getItem('playlists') || '{}')[name];
+    function closePlaylistModal() {
+        elements.playlistModal.addClass('hidden');
+    }
+
+    function addToPlaylist(name, song) {
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        if (!playlists[name].some(s => s.id === song.id)) {
+            playlists[name].push(song);
+            localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+            elements.status.text(`Added ${song.full_name} to ${name}!`);
+        } else {
+            elements.status.text(`${song.full_name} is already in ${name}!`);
+        }
+        closePlaylistModal();
+        setTimeout(() => elements.status.text(''), 2000);
+        if ($('#playlists-tab').is(':visible')) renderPlaylists();
+    }
+
+    function deletePlaylist(name) {
+        if (!confirm(`Delete ${name} playlist?`)) return;
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        delete playlists[name];
+        localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+        renderPlaylists();
+        elements.status.text(`Playlist ${name} deleted!`);
+        setTimeout(() => elements.status.text(''), 2000);
+    }
+
+    function playPlaylistSong(playlistName, index) {
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        state.songs = playlists[playlistName] || [];
         playSong(index);
-    };
-
-    function renderOffline() {
-        if (!elements.offlineList) return;
-        elements.offlineList.innerHTML = '';
-        const offlineSongs = JSON.parse(localStorage.getItem('offlineSongs') || '[]');
-        offlineSongs.forEach((song, index) => {
-            const div = document.createElement('div');
-            div.className = 'song-card bg-gray-800 bg-opacity-30 backdrop-blur-md rounded-xl p-4 shadow-lg';
-            div.innerHTML = `
-                <img src="${song.image_url}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4">
-                <h3 class="text-base font-bold truncate">${song.full_name}</h3>
-                <p class="text-sm text-gray-400 truncate">${song.album}</p>
-                <p class="text-sm text-gray-400 truncate">${song.artist}</p>
-                <p class="text-sm text-gray-400">${song.duration} | ${song.year}</p>
-                <button class="mt-2 bg-teal-500 text-white rounded-full py-1.5 px-3 w-full hover:bg-teal-600 text-sm" onclick="playOffline(${index})"><i class="fa fa-play mr-1"></i>Play</button>
-            `;
-            elements.offlineList.appendChild(div);
-        });
     }
 
-    window.playOffline = async (index) => {
-        const offlineSongs = JSON.parse(localStorage.getItem('offlineSongs') || '[]');
-        songs = offlineSongs;
-        await playSong(index);
-    };
-
-    window.showTab = (tab) => {
-        ['home-tab', 'search-tab', 'suggestions-tab', 'liked-songs-tab', 'playlists-tab', 'offline-tab'].forEach(id => {
-            const tabElement = document.getElementById(id);
-            if (tabElement) tabElement.classList.add('hidden');
-        });
-        const activeTab = document.getElementById(`${tab}-tab`);
-        if (activeTab) activeTab.classList.remove('hidden');
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('bg-teal-500');
-            btn.classList.add('bg-gray-800', 'bg-opacity-50');
-        });
-        const activeBtn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('bg-teal-500');
-            activeBtn.classList.remove('bg-gray-800', 'bg-opacity-50');
+    // Download Functions
+    function addDownload(id) {
+        console.log('Initiating download for song ID:', id);
+        const song = state.resultsObjects[id]?.track || state.songs.find(s => s.id === id);
+        if (!song) {
+            elements.status.text('Song not found for download.');
+            setTimeout(() => elements.status.text(''), 2000);
+            return;
         }
-        if (tab === 'liked-songs') renderLikedSongs();
-        if (tab === 'playlists') renderPlaylists();
-        if (tab === 'offline') renderOffline();
-        if (tab === 'suggestions') loadSuggestions();
-        if (tab === 'home') loadHomeContent();
-    };
 
-    window.saveSettings = () => {
-        const settings = {
-            isDark: document.getElementById('theme-toggle')?.checked ?? true,
-            buttonSize: document.getElementById('button-size')?.value ?? 'small',
-            fontStyle: document.getElementById('font-style')?.value ?? 'poppins',
-            progressStyle: document.getElementById('progress-style')?.value ?? 'simple',
-            progressColor: document.getElementById('progress-color')?.value ?? 'teal'
-        };
-        localStorage.setItem('settings', JSON.stringify(settings));
-        applySettings();
-        if (!document.getElementById('suggestions-tab').classList.contains('hidden') || !document.getElementById('home-tab').classList.contains('hidden')) {
-            loadSuggestions();
+        const downloadItem = $(`
+            <li track_tag="${id}" class="no-bullets">
+                <img class="track-img" src="${song.image[1]?.link || 'img/58964258.png'}" alt="Song Image">
+                <div class="track-info">
+                    <span class="track-name">${song.name || id}</span> - 
+                    <span class="track-album">${song.album?.name || 'Unknown Album'}</span><br>
+                    <span class="track-size">Size: Downloading...</span>
+                    <span class="track-status">Starting...</span>
+                </div>
+            </li>
+        `);
+        elements.downloadList.append(downloadItem);
+
+        elements.downloadLink.css({ backgroundColor: '#22c55e', borderColor: '#22c55e' }).removeClass('hidden');
+        setTimeout(() => {
+            elements.downloadLink.css({ backgroundColor: '#14b8a6', borderColor: '#14b8a6' });
+        }, 1000);
+
+        const bitrateIndex = elements.bitrateSelect.val();
+        const downloadUrl = song.downloadUrl?.[bitrateIndex]?.link;
+        if (!downloadUrl) {
+            downloadItem.find('.track-status').text('Error: Download URL not found').css('color', '#ef4444');
+            console.error('Download URL not found for song ID:', id);
+            return;
         }
-    };
 
-    window.applySettings = () => {
-        const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+        fetch(downloadUrl)
+            .then(response => {
+                if (!response.ok) throw new Error(`Download fetch error: ${response.status}`);
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = $('<a>').css('display', 'none').attr({ href: url, download: `${song.name || id}.mp3` });
+                $('body').append(a);
+                a[0].click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                downloadItem.find('.track-status').text('Downloaded').css('color', '#22c55e');
+                downloadItem.find('.track-size').text(`Size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
+                console.log('Download completed for song ID:', id);
+            })
+            .catch(error => {
+                downloadItem.find('.track-status').text(`Error: ${error.message}`).css('color', '#ef4444');
+                console.error('Download error:', error);
+            });
+    }
+
+    // Auto-Play Setup
+    function setupAutoPlay() {
+        elements.player.off('ended').on('ended', autoPlayHandler);
+        console.log('Auto-play listener set up at', new Date().toLocaleTimeString());
+    }
+
+    function autoPlayHandler() {
+        console.log('Auto-play triggered at', new Date().toLocaleTimeString());
+        if (state.currentSongIndex === -1) {
+            console.error('No current song index set');
+            return;
+        }
+        playNextSong();
+    }
+
+    // Other Playback Functions
+    function playLike(index) {
+        state.songs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        playSong(index);
+    }
+
+    function playRecent(index) {
+        state.songs = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        playSong(index);
+    }
+
+    function playOffline(index) {
+        state.songs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        playSong(index);
+    }
+
+    // Tab Management
+    function showTab(tab) {
+        $('.tab-content').addClass('hidden');
+        $(`#${tab}-tab`).removeClass('hidden');
+        elements.tabButtons.removeClass('active bg-teal-500').addClass('bg-gray-800');
+        $(`.tab-btn[data-tab="${tab}"]`).addClass('active bg-teal-500').removeClass('bg-gray-800');
+        switch (tab) {
+            case 'likes':
+                renderLikes();
+                break;
+            case 'playlists':
+                renderPlaylists();
+                break;
+            case 'offline':
+                renderOffline();
+                break;
+            case 'home':
+                loadHomeContent();
+                break;
+            case 'search':
+                if (state.lastSearch) {
+                    doViTuneSearch(state.lastSearch);
+                }
+                break;
+        }
+    }
+
+    // Settings Management
+    function applySettings() {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isDark = settings.isDark !== false;
-        document.body.classList.toggle('light', !isDark);
-        document.body.classList.remove('font-poppins', 'font-inter');
-        document.body.classList.add(`font-${settings.fontStyle || 'poppins'}`);
-        document.body.classList.remove('button-small', 'button-medium');
-        document.body.classList.add(`button-${settings.buttonSize || 'small'}`);
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) themeToggle.checked = isDark;
-        const buttonSize = document.getElementById('button-size');
-        if (buttonSize) buttonSize.value = settings.buttonSize || 'small';
-        const fontStyle = document.getElementById('font-style');
-        if (fontStyle) fontStyle.value = settings.fontStyle || 'poppins';
-        const progressStyle = document.getElementById('progress-style');
-        if (progressStyle) progressStyle.value = settings.progressStyle || 'simple';
-        const progressColor = document.getElementById('progress-color');
-        if (progressColor) progressColor.value = settings.progressColor || 'teal';
-        elements.progressContainer.classList.remove('simple', 'dots', 'wavy', 'color-teal', 'color-red', 'color-purple');
-        elements.progressContainer.classList.add(settings.progressStyle || 'simple', `color-${settings.progressColor || 'teal'}`);
-        elements.progressBar.classList.remove('bg-teal-500', 'bg-red-500', 'bg-purple-500');
-        elements.progressBar.classList.add(`bg-${settings.progressColor || 'teal'}-500`);
+        const themeStyle = settings.themeStyle || 'dark';
+        const isTransparent = settings.isTransparent !== false;
+        $('body').removeClass('dark light blue green')
+                .addClass(themeStyle)
+                .toggleClass('transparent', isTransparent)
+                .removeClass('font-poppins font-inter font-roboto font-montserrat')
+                .addClass(`font-${settings.fontStyle || 'poppins'}`)
+                .removeClass('font-small font-medium font-large')
+                .addClass(`font-${settings.fontSize || 'medium'}`);
+        $('#theme-toggle').prop('checked', isDark);
+        $('#theme-style').val(themeStyle);
+        $('#transparent-toggle').prop('checked', isTransparent);
+        $('#mood-toggle').prop('checked', settings.moodOff || false);
+        $('#font-size').val(settings.fontSize || 'medium');
+        $('#font-style').val(settings.fontStyle || 'poppins');
+        $('#progress-style').val(settings.progressStyle || 'simple');
+        $('#progress-color').val(settings.progressColor || 'teal');
+        elements.progressContainer.removeClass('simple dots wavy color-teal color-red color-purple color-blue')
+                                 .addClass(settings.progressStyle || 'simple')
+                                 .addClass(`color-${settings.progressColor || 'teal'}`);
+        if (window.location.pathname.includes('settings.html')) {
+            $('body').trigger('settingsApplied');
+        }
+    }
+
+    window.saveSettings = function() {
+        const settings = {
+            isDark: $('#theme-toggle').is(':checked'),
+            themeStyle: $('#theme-style').val(),
+            isTransparent: $('#transparent-toggle').is(':checked'),
+            moodOff: $('#mood-toggle').is(':checked'),
+            fontSize: $('#font-size').val(),
+            fontStyle: $('#font-style').val(),
+            progressStyle: $('#progress-style').val(),
+            progressColor: $('#progress-color').val()
+        };
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+        applySettings();
+        loadAISuggestions();
+        elements.status.text('Settings saved!');
+        setTimeout(() => elements.status.text(''), 2000);
     };
+
+    // Audio Player Toggle
+    function togglePlayer() {
+        elements.audioPlayerContent.toggleClass('expanded');
+        elements.audioPlayerContent.find('.expanded').toggleClass('hidden');
+        elements.audioPlayerContent.find('.compact').toggleClass('hidden');
+        if (elements.audioPlayerContent.hasClass('expanded')) {
+            elements.playPauseBtnExpanded.html(elements.playPauseBtn.html());
+        }
+    }
+
+    // Initialize
+    init();
 });
