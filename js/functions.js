@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    // DOM Elements
+    // DOM Elements (unchanged)
     const elements = {
         searchBox: $('#ViTune-search-box'),
         clearSearch: $('#clear-search'),
@@ -43,7 +43,7 @@ $(document).ready(function() {
         settingsLink: $('#settings-link')
     };
 
-    // State
+    // State (add originalHistory for recent context)
     let state = {
         currentSongId: null,
         lastSearch: '',
@@ -55,7 +55,8 @@ $(document).ready(function() {
         isDetailedView: false,
         allowNavigation: false,
         currentPlaylistView: null,
-        isTransitioning: false
+        isTransitioning: false,
+        originalHistory: [] // Store original history order for recent context
     };
 
     const STORAGE_KEYS = {
@@ -71,7 +72,7 @@ $(document).ready(function() {
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
 
-    // Debounce Function
+    // Debounce Function (unchanged)
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -84,7 +85,7 @@ $(document).ready(function() {
         };
     }
 
-    // Initialize
+    // Initialize (unchanged)
     function init() {
         applySettings();
         cleanHistory();
@@ -105,18 +106,16 @@ $(document).ready(function() {
         disablePullToRefresh();
     }
 
-    // Disable Pull-to-Refresh on Mobile
+    // Disable Pull-to-Refresh (unchanged)
     function disablePullToRefresh() {
-        // Apply scrollable styles to main app and settings page
         const scrollableContainers = '#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content';
         $(scrollableContainers).css({
             'overscroll-behavior-y': 'contain',
             'overflow-y': 'auto',
             'max-height': '100vh',
-            'scrollbar-width': 'none', /* Firefox */
-            '-ms-overflow-style': 'none' /* IE and Edge */
+            'scrollbar-width': 'none',
+            '-ms-overflow-style': 'none'
         });
-        // Hide WebKit scrollbars
         $(scrollableContainers).each(function() {
             this.style.setProperty('::-webkit-scrollbar', 'display: none', 'important');
         });
@@ -125,7 +124,7 @@ $(document).ready(function() {
         $(document).off('touchmove');
     }
 
-    // Disable Refresh and Zoom
+    // Disable Refresh and Zoom (unchanged)
     function disableRefreshAndZoom() {
         $(document).on('keydown', (e) => {
             if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
@@ -145,7 +144,7 @@ $(document).ready(function() {
         });
     }
 
-    // Clean Invalid History Entries
+    // Clean Invalid History Entries (unchanged)
     async function cleanHistory() {
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
         const validHistory = [];
@@ -161,9 +160,10 @@ $(document).ready(function() {
             }
         }
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(validHistory.slice(0, 50)));
+        state.originalHistory = [...validHistory]; // Initialize originalHistory
     }
 
-    // Apply Settings
+    // Apply Settings (unchanged)
     function applySettings() {
         const defaultSettings = {
             theme: 'dark',
@@ -199,7 +199,7 @@ $(document).ready(function() {
         }
     }
 
-    // Event Listeners
+    // Event Listeners (unchanged)
     function bindEventListeners() {
         const debouncedSearch = debounce((query) => {
             if (query.length >= 2) {
@@ -352,7 +352,7 @@ $(document).ready(function() {
         });
     }
 
-    // Toggle Player View
+    // Toggle Player View (unchanged)
     function togglePlayerView() {
         state.isDetailedView = !state.isDetailedView;
         console.log('Toggling player view, new state:', state.isDetailedView);
@@ -367,7 +367,7 @@ $(document).ready(function() {
         }
     }
 
-    // Toggle Loop
+    // Toggle Loop (unchanged)
     function toggleLoop() {
         state.isLooping = !state.isLooping;
         elements.player[0].loop = state.isLooping;
@@ -384,7 +384,7 @@ $(document).ready(function() {
         }, 2000);
     }
 
-    // Search Functions
+    // Search Functions (unchanged)
     function clearSearch() {
         elements.searchBox.val('');
         elements.clearSearch.addClass('hidden');
@@ -569,6 +569,7 @@ $(document).ready(function() {
         history = history.slice(0, 50);
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
         state.resultsObjects[song.id] = { track: song };
+        state.originalHistory = [...history]; // Update originalHistory
 
         // Play audio
         try {
@@ -656,7 +657,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'recent',
-                songs: history,
+                songs: [...state.originalHistory], // Use original history order
                 container: '#home-content .recent-played'
             };
         } else if ($('#offline-tab').is(':visible')) {
@@ -775,7 +776,7 @@ $(document).ready(function() {
         console.log('Seek to:', player.currentTime);
     }
 
-    // Queue Functions
+    // Queue Functions (unchanged)
     function addToPlayNext(song) {
         const songData = state.resultsObjects[song.id]?.track || song;
         if (songData) {
@@ -794,7 +795,7 @@ $(document).ready(function() {
         state.playQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAY_QUEUE) || '[]');
     }
 
-    // Like Functions
+    // Like Functions (unchanged)
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
@@ -831,7 +832,7 @@ $(document).ready(function() {
         return likes.some(s => s.id === songId);
     }
 
-    // Playlist Functions
+    // Playlist Functions (unchanged)
     function showPlaylistModalCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
@@ -927,7 +928,7 @@ $(document).ready(function() {
         }
     }
 
-    // Download Functions
+    // Download Functions (unchanged)
     function addDownload(songId) {
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
@@ -983,7 +984,7 @@ $(document).ready(function() {
             });
     }
 
-    // Render Functions
+    // Render Functions (unchanged)
     function generateSongCard(song) {
         return `
             <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 play-btn" data-song-id="${song.id}">
@@ -1036,6 +1037,7 @@ $(document).ready(function() {
             }
         }
         history = validHistory.slice(0, 8);
+        state.originalHistory = [...validHistory]; // Update originalHistory
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
@@ -1184,7 +1186,7 @@ $(document).ready(function() {
         console.log('Offline songs rendered');
     }
 
-    // Event Binding for Cards
+    // Event Binding for Cards (unchanged)
     function bindCardEventListeners() {
         const debouncedPlay = debounce((songId) => {
             console.log('Play button clicked:', songId);
@@ -1286,7 +1288,7 @@ $(document).ready(function() {
         });
     }
 
-    // Utility Functions
+    // Utility Functions (unchanged)
     function textAbstract(text, length) {
         if (!text) return '';
         text = $('<div/>').html(text).text();

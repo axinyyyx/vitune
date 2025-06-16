@@ -1,9 +1,69 @@
-/* Existing styles (assumed) */
+/* Existing styles (assumed to be unchanged) */
 body {
     overscroll-behavior-y: none;
     touch-action: auto;
 }
 
+.no-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+/* Settings page specific styles */
+#settings-content {
+    max-height: calc(100vh - 64px); /* Adjust for navbar height */
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+}
+
+.setting-card {
+    backdrop-filter: blur(5px);
+}
+
+.setting-card select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1em;
+}
+
+/* Font size classes */
+.font-xsmall { font-size: 0.75rem; }
+.font-small { font-size: 0.875rem; }
+.font-medium { font-size: 1rem; }
+.font-large { font-size: 1.125rem; }
+.font-xlarge { font-size: 1.25rem; }
+
+/* Animation speed classes */
+.animation-fast { transition-duration: 100ms; }
+.animation-normal { transition-duration: 200ms; }
+.animation-slow { transition-duration: 300ms; }
+
+/* Accent color classes */
+.accent-teal { color: #26A69A; }
+.accent-purple { color: #AB47BC; }
+.accent-pink { color: #EC407A; }
+
+/* Progress bar styles (unchanged, for reference) */
+.progress-bar-teal { background-color: #26A69A; }
+.progress-bar-red { background-color: #EF5350; }
+.progress-bar-blue { background-color: #42A5F5; }
+.progress-bar-purple { background-color: #AB47BC; }
+.progress-bar-pink { background-color: #EC407A; }
+.progress-bar-simple { background-image: none; }
+.progress-bar-gradient { background-image: linear-gradient(to right, #26A69A, #42A5F5); }
+.progress-bar-wave { background-image: url('img/wave.png'); background-size: cover; }
+
+/* Song transparency (unchanged, for reference) */
+.song-transparent {
+    background-color: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(5px);
+}
 #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
     overscroll-behavior-y: contain;
     overflow-y: auto;
