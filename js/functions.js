@@ -53,7 +53,8 @@ $(document).ready(function() {
         isLooping: false,
         isPlaying: false,
         isDetailedView: false,
-        allowNavigation: false
+        allowNavigation: false,
+        currentPlaylistView: null
     };
 
     const STORAGE_KEYS = {
@@ -67,6 +68,7 @@ $(document).ready(function() {
 
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
     const API_TIMEOUT = 10000;
+    const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
 
     // Debounce Function
     function debounce(func, wait) {
@@ -198,6 +200,7 @@ $(document).ready(function() {
         elements.tabButtons.off('click').on('click', function() {
             const tab = $(this).data('tab');
             console.log('Tab clicked:', tab);
+            state.currentPlaylistView = null;
             showTab(tab);
         });
 
@@ -300,10 +303,10 @@ $(document).ready(function() {
         window.addEventListener('hashchange', handleHashChange);
 
         function handleHashChange() {
-            const query = decodeURIComponent(window.location.hash.substring(1));
+            const query = decodeURIComponent(window.location.hash.substring(1)).replace(/\+/g, ' ');
             if (query) {
                 console.log('Hash changed:', query);
-                elements.searchBox.val(query.replace(/\+/g, ' '));
+                elements.searchBox.val(query);
                 doViTuneSearch(query);
             }
         }
@@ -318,8 +321,13 @@ $(document).ready(function() {
     // Toggle Player View
     function togglePlayerView() {
         state.isDetailedView = !state.isDetailedView;
-        elements.playerMinimal.toggleClass('hidden', state.isDetailedView);
-        elements.playerDetailed.toggleClass('hidden', !state.isDetailedView);
+        if (state.isDetailedView) {
+            elements.playerMinimal.addClass('hidden');
+            elements.playerDetailed.removeClass('hidden');
+        } else {
+            elements.playerMinimal.removeClass('hidden');
+            elements.playerDetailed.addClass('hidden');
+        }
         console.log('Player view toggled:', state.isDetailedView ? 'Detailed' : 'Minimal');
     }
 
@@ -338,9 +346,9 @@ $(document).ready(function() {
     }
 
     function handleDirectURL() {
-        const hash = decodeURIComponent(window.location.hash.substring(1));
+        const hash = decodeURIComponent(window.location.hash.substring(1)).replace(/\+/g, ' ');
         if (hash) {
-            const query = hash.replace(/\+/g, ' ');
+            const query = hash;
             elements.searchBox.val(query);
             doViTuneSearch(query, true);
             showTab('search');
@@ -353,8 +361,8 @@ $(document).ready(function() {
         if (!query) return;
         showTab('search');
         query = query.trim().replace(/\s+/g, ' ');
-        const encodedQuery = encodeURIComponent(query.replace(/\s/g, '+'));
-        window.location.hash = encodedQuery;
+        const encodedQuery = encodeURIComponent(query);
+        window.location.hash = query; // Use raw query to preserve spaces
         elements.searchBox.val(query);
         elements.status.text('Searching...');
         elements.results.html('<span class="loader"></span>');
@@ -520,6 +528,15 @@ $(document).ready(function() {
     }
 
     function playNextSong() {
+        if (state.isLooping && state.currentSongId) {
+            const song = state.resultsObjects[state.currentSongId]?.track;
+            if (song) {
+                playAudio(song.url, song.id);
+                console.log('Looping current song:', song.name);
+                return;
+            }
+        }
+
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             playAudio(nextSong.url, nextSong.id);
@@ -560,6 +577,7 @@ $(document).ready(function() {
     function toggleLoop() {
         state.isLooping = !state.isLooping;
         elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
+        elements.loopBtn.find('i').toggleClass('fa-repeat', state.isLooping).toggleClass('fa-repeat', !state.isLooping);
         console.log('Loop state:', state.isLooping);
     }
 
@@ -691,6 +709,7 @@ $(document).ready(function() {
         playlists[name] = [];
         localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
         renderPlaylists();
+        loadHomeContent();
         elements.status.text(`Playlist "${name}" created`);
         console.log('Playlist created:', name);
     }
@@ -699,11 +718,14 @@ $(document).ready(function() {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (!playlists[playlistName]) playlists[playlistName] = [];
         if (!playlists[playlistName].some(s => s.id === song.id)) {
-            playlists[playlistName].push(song);
+            playlists[playlistName].unshift(song); // Add to start for latest first
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Added to "${playlistName}"`);
             if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
+            }
+            if ($('#home-tab').is(':visible')) {
+                loadHomeContent();
             }
             console.log('Song added to playlist:', song.name, playlistName);
         }
@@ -715,8 +737,13 @@ $(document).ready(function() {
             playlists[playlistName] = playlists[playlistName].filter(s => s.id !== songId);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Removed from "${playlistName}"`);
-            if ($('#playlists-tab').is(':visible')) {
+            if ($('#playlists-tab').is(':visible' && state.currentPlaylistView === playlistName)) {
+                renderPlaylistSongs(playlistName);
+            } else if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
+            }
+            if ($('#home-tab').is(':visible')) {
+                loadHomeContent();
             }
             console.log('Song removed from playlist:', songId, playlistName);
         }
@@ -800,6 +827,17 @@ $(document).ready(function() {
         `;
     }
 
+    function generatePlaylistCard(name, songs) {
+        const image = songs.length ? songs[0].image : DEFAULT_PLAYLIST_IMAGE;
+        return `
+            <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 playlist-card cursor-pointer" data-playlist-name="${name}">
+                <img src="${image}" alt="${name} Playlist" class="w-full h-40 object-cover rounded-lg mb-4">
+                <h3 class="text-sm font-semibold mb-1 truncate">${name}</h3>
+                <p class="text-xs text-gray-400 truncate">${songs.length} song${songs.length !== 1 ? 's' : ''}</p>
+            </div>
+        `;
+    }
+
     async function loadHomeContent() {
         const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
@@ -835,20 +873,19 @@ $(document).ready(function() {
                 ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
-            <div class="space-y-4">
-                ${Object.keys(playlists).map(name => `
-                    <div class="mb-4">
-                        <div class="flex justify-between mb-2">
-                            <h3 class="text-base font-semibold truncate">${name}</h3>
-                            <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                            ${playlists[name].length ? playlists[name].slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
-                        </div>
-                    </div>
-                `).join('') || '<p class="text-center text-sm text-gray-400">No playlists.</p>'}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                ${Object.keys(playlists).length ? Object.keys(playlists).map(name => generatePlaylistCard(name, playlists[name])).join('') : '<p class="text-center text-sm text-gray-400">No playlists.</p>'}
             </div>
         `);
+
+        $('.playlist-card').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const playlistName = $(this).data('playlist-name');
+            console.log('Playlist card clicked:', playlistName);
+            state.currentPlaylistView = playlistName;
+            renderPlaylistSongs(playlistName, '#home-content');
+        });
+
         bindCardEventListeners();
         console.log('Home content loaded');
     }
@@ -866,26 +903,87 @@ $(document).ready(function() {
 
     function renderPlaylists() {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        if (state.currentPlaylistView) {
+            renderPlaylistSongs(state.currentPlaylistView);
+            return;
+        }
+
         elements.playlistsList.empty();
         if (!Object.keys(playlists).length) {
             elements.playlistsList.html('<p class="text-center text-sm text-gray-400">No playlists.</p>');
             return;
         }
-        Object.keys(playlists).forEach(name => {
-            elements.playlistsList.append(`
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <h3 class="text-base font-semibold truncate">${name}</h3>
-                        <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${name}"><i class="fa fa-trash"></i></button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        ${playlists[name].length ? playlists[name].map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">Empty playlist.</p>'}
-                    </div>
-                </div>
-            `);
+
+        elements.playlistsList.html(`
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                ${Object.keys(playlists).map(name => generatePlaylistCard(name, playlists[name])).join('')}
+            </div>
+        `);
+
+        $('.playlist-card').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const playlistName = $(this).data('playlist-name');
+            console.log('Playlist card clicked:', playlistName);
+            state.currentPlaylistView = playlistName;
+            renderPlaylistSongs(playlistName);
         });
+
         bindCardEventListeners();
         console.log('Playlists rendered');
+    }
+
+    function renderPlaylistSongs(playlistName, containerId = '#playlists-list') {
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        const songs = playlists[playlistName] || [];
+        $(containerId).html(`
+            <div class="mb-4">
+                <div class="flex justify-between mb-2">
+                    <h3 class="text-base font-semibold truncate">${playlistName}</h3>
+                    <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${playlistName}"><i class="fa fa-trash"></i> Delete Playlist</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    ${songs.length ? songs.map(song => `
+                        <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200">
+                            <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
+                            <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
+                            <p class="text-xs text-gray-400 truncate mb-1 play-btn" data-song-id="${song.id}">${song.album || '-'}</p>
+                            <p class="text-xs text-gray-400 truncate play-btn" data-song-id="${song.id}">${song.artist}</p>
+                            <p class="text-xs text-gray-500 play-btn" data-song-id="${song.id}">${song.duration} | ${song.year || '-'}</p>
+                            <button class="remove-from-playlist-btn absolute top-2 right-2 text-red-500 hover:text-red-400 text-sm" data-name="${playlistName}" data-song-id="${song.id}"><i class="fa fa-minus-circle"></i></button>
+                        </div>
+                    `).join('') : '<p class="text-center text-sm text-gray-400">No songs in this playlist.</p>'}
+                </div>
+            </div>
+        `);
+
+        $('.remove-from-playlist-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const playlistName = $(this).data('name');
+            const songId = $(this).data('song-id');
+            console.log('Remove from playlist clicked:', songId, playlistName);
+            removeFromPlaylist(playlistName, songId);
+        });
+
+        $('.delete-playlist-btn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            const playlistName = $(this).data('name');
+            console.log('Delete playlist clicked:', playlistName);
+            if (confirm(`Delete playlist "${playlistName}"?`)) {
+                const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+                delete playlists[playlistName];
+                localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+                state.currentPlaylistView = null;
+                if (containerId === '#playlists-list') {
+                    renderPlaylists();
+                } else {
+                    loadHomeContent();
+                }
+                elements.status.text(`Playlist "${playlistName}" deleted`);
+            }
+        });
+
+        bindCardEventListeners();
+        console.log('Playlist songs rendered:', playlistName);
     }
 
     function renderOffline() {
@@ -986,7 +1084,9 @@ $(document).ready(function() {
                 const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
                 delete playlists[playlistName];
                 localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+                state.currentPlaylistView = null;
                 renderPlaylists();
+                loadHomeContent();
                 elements.status.text(`Playlist "${playlistName}" deleted`);
             }
         });
@@ -1018,8 +1118,10 @@ $(document).ready(function() {
         elements.tabButtons.removeClass('bg-teal-500 text-white').addClass('bg-gray-800 text-gray-400');
         $(`.tab-btn[data-tab="${tabName}"]`).removeClass('bg-gray-800 text-gray-400').addClass('bg-teal-500 text-white');
         if (tabName === 'likes') renderLikes();
-        else if (tabName === 'playlists') renderPlaylists();
-        else if (tabName === 'offline') renderOffline();
+        else if (tabName === 'playlists') {
+            state.currentPlaylistView = null;
+            renderPlaylists();
+        } else if (tabName === 'offline') renderOffline();
         else if (tabName === 'home') loadHomeContent();
         console.log('Tab shown:', tabName);
     }
