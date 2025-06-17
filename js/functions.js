@@ -406,7 +406,7 @@ $(document).ready(function() {
             doViTuneSearch(query, true);
             showTab('search');
         } else {
-            'AP%20dhillon', true);
+            doViTuneSearch('AP%20dhillon', true);
         }
     }
 
