@@ -1,6 +1,5 @@
-
 $(document).ready(function() {
-    // DOM Elements (unchanged)
+    // DOM Elements
     const elements = {
         searchBox: $('#ViTune-search-box'),
         clearSearch: $('#clear-search'),
@@ -44,7 +43,7 @@ $(document).ready(function() {
         settingsLink: $('#settings-link')
     };
 
-    // State (add originalHistory for recent context)
+    // State
     let state = {
         currentSongId: null,
         lastSearch: '',
@@ -57,7 +56,7 @@ $(document).ready(function() {
         allowNavigation: false,
         currentPlaylistView: null,
         isTransitioning: false,
-        originalHistory: [] // Store original history order for recent context
+        originalHistory: []
     };
 
     const STORAGE_KEYS = {
@@ -73,7 +72,7 @@ $(document).ready(function() {
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
 
-    // Debounce Function (unchanged)
+    // Debounce Function
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -86,7 +85,7 @@ $(document).ready(function() {
         };
     }
 
-    // Initialize (unchanged)
+    // Initialize
     function init() {
         applySettings();
         cleanHistory();
@@ -107,13 +106,13 @@ $(document).ready(function() {
         disablePullToRefresh();
     }
 
-    // Disable Pull-to-Refresh (unchanged)
+    // Disable Pull-to-Refresh
     function disablePullToRefresh() {
         const scrollableContainers = '#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content';
         $(scrollableContainers).css({
             'overscroll-behavior-y': 'contain',
             'overflow-y': 'auto',
-            'max-height': '100vh',
+            'max-height': 'calc(100vh - 120px)',
             'scrollbar-width': 'none',
             '-ms-overflow-style': 'none'
         });
@@ -125,7 +124,7 @@ $(document).ready(function() {
         $(document).off('touchmove');
     }
 
-    // Disable Refresh and Zoom (unchanged)
+    // Disable Refresh and Zoom
     function disableRefreshAndZoom() {
         $(document).on('keydown', (e) => {
             if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
@@ -145,7 +144,7 @@ $(document).ready(function() {
         });
     }
 
-    // Clean Invalid History Entries (unchanged)
+    // Clean Invalid History Entries
     async function cleanHistory() {
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
         const validHistory = [];
@@ -161,10 +160,10 @@ $(document).ready(function() {
             }
         }
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(validHistory.slice(0, 50)));
-        state.originalHistory = [...validHistory]; // Initialize originalHistory
+        state.originalHistory = [...validHistory];
     }
 
-    // Apply Settings (unchanged)
+    // Apply Settings
     function applySettings() {
         const defaultSettings = {
             theme: 'dark',
@@ -175,7 +174,7 @@ $(document).ready(function() {
             progressBarColor: 'teal',
             progressBarStyle: 'simple',
             bitrate: '4',
-            moodFilter: 'off',
+            moodFilter: 'on', // Default to 'on' (all songs)
             accentColor: 'teal',
             animationSpeed: 'normal'
         };
@@ -200,7 +199,7 @@ $(document).ready(function() {
         }
     }
 
-    // Event Listeners (unchanged)
+    // Event Listeners
     function bindEventListeners() {
         const debouncedSearch = debounce((query) => {
             if (query.length >= 2) {
@@ -353,7 +352,7 @@ $(document).ready(function() {
         });
     }
 
-    // Toggle Player View (unchanged)
+    // Toggle Player View
     function togglePlayerView() {
         state.isDetailedView = !state.isDetailedView;
         console.log('Toggling player view, new state:', state.isDetailedView);
@@ -368,7 +367,7 @@ $(document).ready(function() {
         }
     }
 
-    // Toggle Loop (unchanged)
+    // Toggle Loop
     function toggleLoop() {
         state.isLooping = !state.isLooping;
         elements.player[0].loop = state.isLooping;
@@ -385,7 +384,7 @@ $(document).ready(function() {
         }, 2000);
     }
 
-    // Search Functions (unchanged)
+    // Search Functions
     function clearSearch() {
         elements.searchBox.val('');
         elements.clearSearch.addClass('hidden');
@@ -409,6 +408,22 @@ $(document).ready(function() {
         } else {
             doViTuneSearch('Honey Singh', true);
         }
+    }
+
+    // Mood Filter Logic
+    function applyMoodFilter(songs) {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        if (settings.moodFilter === 'off') {
+            // Filter out sad songs (heuristic: exclude songs with 'sad', 'slow', 'melancholy' in name or album)
+            return songs.filter(song => {
+                const nameLower = song.name.toLowerCase();
+                const albumLower = song.album?.toLowerCase() || '';
+                return !nameLower.includes('sad') && !nameLower.includes('slow') && !nameLower.includes('melancholy') &&
+                       !albumLower.includes('sad') && !albumLower.includes('slow') && !albumLower.includes('melancholy');
+            });
+        }
+        // 'on' shows all songs
+        return songs;
     }
 
     async function doViTuneSearch(query, noScroll = false) {
@@ -450,7 +465,7 @@ $(document).ready(function() {
             state.lastSearch = query;
             const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const bitrateIndex = settings.bitrate || '4';
-            const songs = results
+            let songs = results
                 .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.link)
                 .map(track => {
                     let song_name = textAbstract(track.name, 25);
@@ -476,6 +491,9 @@ $(document).ready(function() {
                     state.resultsObjects[song.id] = { track: song };
                     return song;
                 });
+
+            // Apply mood filter
+            songs = applyMoodFilter(songs);
 
             elements.results.empty();
             if (songs.length) {
@@ -508,7 +526,7 @@ $(document).ready(function() {
     // Playback Functions
     async function playAudio(audioUrl, songId) {
         console.log('playAudio called:', { songId, audioUrl });
-        state.isTransitioning = false; // Force reset to prevent lock
+        state.isTransitioning = false;
         state.isTransitioning = true;
 
         const song = state.resultsObjects[songId]?.track;
@@ -519,7 +537,6 @@ $(document).ready(function() {
             return;
         }
 
-        // Validate URL
         try {
             const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -531,7 +548,6 @@ $(document).ready(function() {
             return;
         }
 
-        // Reset audio element
         try {
             elements.player[0].pause();
             elements.player[0].currentTime = 0;
@@ -542,7 +558,6 @@ $(document).ready(function() {
             console.error('Audio reset error:', error);
         }
 
-        // Update state and UI
         state.currentSongId = songId;
         state.isPlaying = false;
         elements.audioSource.attr('src', audioUrl);
@@ -554,13 +569,11 @@ $(document).ready(function() {
         elements.audioPlayer.removeClass('hidden');
         document.title = `${song.name} - ${song.album || 'Unknown Album'}`;
 
-        // Apply song card transparency
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         if (settings.songCardTransparency === 'on') {
             $('.song-container, #ViTune-results').addClass('song-transparent');
         }
 
-        // Update history
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
         const existingIndex = history.findIndex(s => s.id === song.id);
         if (existingIndex !== -1) {
@@ -570,9 +583,8 @@ $(document).ready(function() {
         history = history.slice(0, 50);
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
         state.resultsObjects[song.id] = { track: song };
-        state.originalHistory = [...history]; // Update originalHistory
+        state.originalHistory = [...history];
 
-        // Play audio
         try {
             await elements.player[0].load();
             await elements.player[0].play();
@@ -616,7 +628,7 @@ $(document).ready(function() {
         if ($('#search-tab').is(':visible')) {
             context = {
                 type: 'search',
-                songs: Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song),
+                songs: applyMoodFilter(Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song)),
                 container: '#ViTune-results'
             };
         } else if ($('#likes-tab').is(':visible')) {
@@ -626,7 +638,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'likes',
-                songs: likes,
+                songs: applyMoodFilter(likes),
                 container: '#likes-list'
             };
         } else if ($('#playlists-tab').is(':visible') && state.currentPlaylistView) {
@@ -637,7 +649,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'playlist',
-                songs: playlistSongs,
+                songs: applyMoodFilter(playlistSongs),
                 container: '#playlists-list'
             };
         } else if ($('#home-tab').is(':visible') && state.currentPlaylistView) {
@@ -648,7 +660,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'playlist',
-                songs: playlistSongs,
+                songs: applyMoodFilter(playlistSongs),
                 container: '#home-content'
             };
         } else if ($('#home-tab').is(':visible')) {
@@ -658,7 +670,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'recent',
-                songs: [...state.originalHistory], // Use original history order
+                songs: applyMoodFilter([...state.originalHistory]),
                 container: '#home-content .recent-played'
             };
         } else if ($('#offline-tab').is(':visible')) {
@@ -668,7 +680,7 @@ $(document).ready(function() {
             });
             context = {
                 type: 'offline',
-                songs: offline,
+                songs: applyMoodFilter(offline),
                 container: '#offline-list'
             };
         }
@@ -678,10 +690,9 @@ $(document).ready(function() {
 
     function playNextSong() {
         console.log('playNextSong called:', { isTransitioning: state.isTransitioning, currentSongId: state.currentSongId });
-        state.isTransitioning = false; // Force reset
+        state.isTransitioning = false;
         state.isTransitioning = true;
 
-        // Check play queue
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             console.log('Playing from queue:', nextSong.name);
@@ -691,7 +702,6 @@ $(document).ready(function() {
             return;
         }
 
-        // Get context
         const context = getCurrentContext();
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
@@ -702,17 +712,14 @@ $(document).ready(function() {
             return;
         }
 
-        // Find current song index
         let currentIndex = context.songs.findIndex(song => song.id === state.currentSongId);
         console.log('Current index:', currentIndex);
 
-        // If not found, start from first
         if (currentIndex === -1) {
             currentIndex = -1;
             console.log('Current song not found, starting from first');
         }
 
-        // Find next song
         let nextSong = null;
         if (currentIndex + 1 < context.songs.length) {
             nextSong = context.songs[currentIndex + 1];
@@ -777,7 +784,7 @@ $(document).ready(function() {
         console.log('Seek to:', player.currentTime);
     }
 
-    // Queue Functions (unchanged)
+    // Queue Functions
     function addToPlayNext(song) {
         const songData = state.resultsObjects[song.id]?.track || song;
         if (songData) {
@@ -796,7 +803,7 @@ $(document).ready(function() {
         state.playQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAY_QUEUE) || '[]');
     }
 
-    // Like Functions (unchanged)
+    // Like Functions
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
@@ -833,7 +840,7 @@ $(document).ready(function() {
         return likes.some(s => s.id === songId);
     }
 
-    // Playlist Functions (unchanged)
+    // Playlist Functions
     function showPlaylistModalCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
@@ -929,7 +936,7 @@ $(document).ready(function() {
         }
     }
 
-    // Download Functions (unchanged)
+    // Download Functions
     function addDownload(songId) {
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
@@ -985,7 +992,7 @@ $(document).ready(function() {
             });
     }
 
-    // Render Functions (unchanged)
+    // Render Functions
     function generateSongCard(song) {
         return `
             <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 play-btn" data-song-id="${song.id}">
@@ -1024,7 +1031,6 @@ $(document).ready(function() {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
 
-        // Validate history URLs
         const validHistory = [];
         for (const song of history) {
             try {
@@ -1038,20 +1044,20 @@ $(document).ready(function() {
             }
         }
         history = validHistory.slice(0, 8);
-        state.originalHistory = [...validHistory]; // Update originalHistory
+        state.originalHistory = [...validHistory];
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
             <div class="recent-played grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
+                ${history.length ? applyMoodFilter(history).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${likes.length ? likes.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+                ${likes.length ? applyMoodFilter(likes.slice(0, 8)).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Offline Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
+                ${offlineSongs.length ? applyMoodFilter(offlineSongs.slice(0, 8)).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1078,7 +1084,7 @@ $(document).ready(function() {
         });
         elements.likesList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${likes.length ? likes.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+                ${likes.length ? applyMoodFilter(likes).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -1129,7 +1135,7 @@ $(document).ready(function() {
                     <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${playlistName}"><i class="fa fa-trash"></i> Delete Playlist</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    ${songs.length ? songs.map(song => `
+                    ${songs.length ? applyMoodFilter(songs).map(song => `
                         <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200">
                             <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
                             <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
@@ -1180,14 +1186,14 @@ $(document).ready(function() {
         });
         elements.offlineList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
+                ${offlineSongs.length ? applyMoodFilter(offlineSongs).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
         console.log('Offline songs rendered');
     }
 
-    // Event Binding for Cards (unchanged)
+    // Event Binding for Cards
     function bindCardEventListeners() {
         const debouncedPlay = debounce((songId) => {
             console.log('Play button clicked:', songId);
@@ -1289,7 +1295,7 @@ $(document).ready(function() {
         });
     }
 
-    // Utility Functions (unchanged)
+    // Utility Functions
     function textAbstract(text, length) {
         if (!text) return '';
         text = $('<div/>').html(text).text();
