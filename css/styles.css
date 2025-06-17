@@ -1,26 +1,23 @@
-/* General Body and Scrollbar Styles */
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     overscroll-behavior-y: none;
     touch-action: auto;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Scrollable Containers */
 #ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
     overscroll-behavior-y: contain;
     overflow-y: auto;
-    max-height: calc(100vh - 140px); /* Adjusted for navbar, tabs, and player */
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-bottom: 20px;
+    padding-bottom: 80px; /* Ensure content isn't hidden under audio player */
 }
 
 #ViTune-results::-webkit-scrollbar,
@@ -38,19 +35,13 @@ body {
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
     cursor: pointer;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .song-container:hover {
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
     transform: translateY(-2px);
-}
-
-.song-transparent {
-    background-color: rgba(31, 41, 55, 0.5) !important;
 }
 
 /* Control Buttons */
@@ -62,31 +53,67 @@ body {
     transform: scale(0.95);
 }
 
-/* Navigation and Tabs */
-nav {
-    background: linear-gradient(to right, #1f2937, #374151);
+/* Settings Content */
+#settings-content {
+    min-height: calc(100vh - 64px); /* Account for navbar */
+    padding: 16px;
 }
 
-.tab-btn {
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+/* Infinity Icon */
+.infinity-icon {
+    font-size: 1.2em;
+    display: inline-block;
+    transition: color 0.2s;
 }
 
-.tab-btn:active {
-    transform: scale(0.95);
+#loop-btn.active .infinity-icon {
+    color: #2dd4bf;
 }
 
-/* Search Bar */
-#search-tab .relative {
-    /* margin-top: 10px; */
-    /* z-index: 40; */
+/* Loop State Label */
+.loop-state-label {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2dd4bf;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    z-index: 10;
+    opacity: 1;
+    transition: opacity 0.5s;
 }
 
-/* Audio Player */
-#audio-player {
-    z-index: 40;
+/* No Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
 }
 
-/* Floating Button */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Loader */
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    display: block;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Float Button */
 .float-button {
     width: 32px;
     height: 32px;
@@ -173,7 +200,7 @@ nav {
     margin: 0;
 }
 
-/* Theme and Font Styles */
+/* Theme Styles */
 .dark {
     background-color: #1f2937;
     color: #f3f4f6;
@@ -186,6 +213,7 @@ nav {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Font Styles */
 .font-poppins { font-family: 'Poppins', sans-serif; }
 .font-roboto { font-family: 'Roboto', sans-serif; }
 .font-open-sans { font-family: 'Open Sans', sans-serif; }
@@ -194,12 +222,14 @@ nav {
 .font-arial { font-family: Arial, sans-serif; }
 .font-times { font-family: 'Times New Roman', Times, serif; }
 
+/* Font Sizes */
 .font-xsmall { font-size: 0.75rem; line-height: 1rem; }
 .font-small { font-size: 0.875rem; line-height: 1.25rem; }
 .font-medium { font-size: 1rem; line-height: 1.5rem; }
 .font-large { font-size: 1.125rem; line-height: 1.75rem; }
 .font-xlarge { font-size: 1.25rem; line-height: 1.875rem; }
 
+/* Transparency */
 .transparent-on {
     background-color: rgba(31, 41, 55, 0.5);
 }
@@ -208,13 +238,18 @@ nav {
     background-color: rgba(31, 41, 55, 1);
 }
 
-/* Progress Bar Styles */
+.song-transparent {
+    background-color: rgba(31, 41, 55, 0.5) !important;
+}
+
+/* Progress Bar Colors */
 .progress-bar-teal { background-color: #2dd4bf; }
 .progress-bar-red { background-color: #ef4444; }
 .progress-bar-blue { background-color: #3b82f6; }
 .progress-bar-purple { background-color: #a855f7; }
 .progress-bar-pink { background-color: #ec4899; }
 
+/* Progress Bar Styles */
 .progress-bar-simple {
     background-image: none;
 }
@@ -234,15 +269,47 @@ nav {
     100% { background-position: 200% 50%; }
 }
 
-/* Accent Colors */
-.accent-teal { color: #2dd4bf; }
-.accent-teal:hover { color: #5eead4; }
-.accent-purple { color: #a855f7; }
-.accent-purple:hover { color: #c084fc; }
-.accent-pink { color: #ec4899; }
-.accent-pink:hover { color: #f472b6; }
+/* Tab Buttons */
+.tab-btn {
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
 
-/* Settings Card */
+.tab-btn:active {
+    transform: scale(0.95);
+}
+
+/* Accent Colors */
+.accent-teal {
+    color: #2dd4bf;
+}
+
+.accent-teal:hover {
+    color: #5eead4;
+}
+
+.accent-purple {
+    color: #a855f7;
+}
+
+.accent-purple:hover {
+    color: #c084fc;
+}
+
+.accent-pink {
+    color: #ec4899;
+}
+
+.accent-pink:hover {
+    color: #f472b6;
+}
+
+/* Navbar */
+nav {
+    background: linear-gradient(to right, #1f2937, #374151);
+    z-index: 50;
+}
+
+/* Setting Card */
 .setting-card {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease;
@@ -252,6 +319,7 @@ nav {
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* Select Elements */
 select {
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -259,119 +327,6 @@ select {
 select:hover {
     background-color: #4b5563;
     box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3);
-}
-
-/* Mood Toggle */
-.mood-toggle {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-}
-
-.mood-toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.mood-toggle-label {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #4b5563;
-    transition: background-color 0.2s ease;
-    border-radius: 34px;
-}
-
-.mood-toggle-label:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: transform 0.2s ease;
-    border-radius: 50%;
-}
-
-.mood-toggle input:checked + .mood-toggle-label {
-    background-color: #2dd4bf;
-}
-
-.mood-toggle input:checked + .mood-toggle-label:before {
-    transform: translateX(26px);
-}
-
-.mood-toggle-inner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.mood-toggle input:checked + .mood-toggle-label .mood-toggle-inner:before {
-    content: "ON";
-}
-
-.mood-toggle input:not(:checked) + .mood-toggle-label .mood-toggle-inner:before {
-    content: "OFF";
-}
-
-.mood-toggle-switch {
-    display: none;
-}
-
-/* Loop Icon */
-.infinity-icon {
-    font-size: 1.2em;
-    display: inline-block;
-    transition: color 0.2s;
-}
-
-#loop-btn.active .infinity-icon {
-    color: #2dd4bf;
-}
-
-/* Loop State Label */
-.loop-state-label {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #2dd4bf;
-    color: white;
-    font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 10px;
-    z-index: 10;
-    opacity: 1;
-    transition: opacity 0.5s;
-}
-
-/* Loader */
-.loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin: 0 auto;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 /* Animation Speeds */
@@ -387,8 +342,95 @@ select:hover {
     transition-duration: 0.5s;
 }
 
+/* Mood Toggle */
+.mood-toggle {
+    position: relative;
+    width: 48px;
+    height: 24px;
+}
+
+.mood-toggle input {
+    display: none;
+}
+
+.mood-toggle-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 24px;
+    background-color: #4b5563;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.mood-toggle-inner {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.mood-toggle-switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-size: 10px;
+    transition: opacity 0.3s ease;
+}
+
+.mood-toggle input:checked + .mood-toggle-label {
+    background-color: #2dd4bf;
+}
+
+.mood-toggle input:checked + .mood-toggle-label .mood-toggle-inner {
+    transform: translateX(24px);
+}
+
+.mood-toggle input:checked + .mood-toggle-label::before {
+    content: 'ON';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-size: 10px;
+}
+
+.mood-toggle input:not(:checked) + .mood-toggle-label::before {
+    content: 'OFF';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-size: 10px;
+}
+
+/* Search Bar */
+#search-tab .relative {
+    margin-top: 16px; /* Space below tabs */
+    z-index: 40;
+}
+
+#ViTune-results {
+    margin-top: 16px; /* Ensure results start below search bar */
+}
+
+/* Audio Player */
+#audio-player {
+    z-index: 40;
+    bottom: 0;
+}
+
 /* Responsive Design */
-@media (max-width: stories640px) {
+@media (max-width: 640px) {
     .song-container {
         width: 100%;
         max-width: 100%;
