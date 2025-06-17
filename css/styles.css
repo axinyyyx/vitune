@@ -1,145 +1,9 @@
-/* General Body Styles */
+/* General Body and Scrollbar Styles */
 body {
     overscroll-behavior-y: none;
     touch-action: auto;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
 }
 
-/* Scrollable Containers */
-#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
-    overscroll-behavior-y: contain;
-    overflow-y: auto;
-    max-height: calc(100vh - 120px); /* Adjusted for navbar and search bar */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-    padding-bottom: 80px; /* Ensure content isn't hidden under audio player */
-}
-
-#ViTune-results::-webkit-scrollbar,
-#home-content::-webkit-scrollbar,
-#playlists-list::-webkit-scrollbar,
-#likes-list::-webkit-scrollbar,
-#offline-list::-webkit-scrollbar,
-#settings-content::-webkit-scrollbar {
-    display: none; /* WebKit browsers */
-}
-
-/* Search Bar Container */
-.search-bar-container {
-    position: sticky;
-    top: 64px; /* Below navbar */
-    z-index: 40;
-    background: #111827;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-/* Song Container */
-.song-container {
-    background-color: #1f2937;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-    cursor: pointer;
-    margin-bottom: 1rem;
-}
-
-.song-container:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
-}
-
-/* Control Buttons */
-.control-btn {
-    color: #14b8a6;
-    transition: color 0.2s ease, transform 0.1s ease;
-}
-
-.control-btn:hover {
-    color: #0d9488;
-}
-
-.control-btn:active {
-    transform: scale(0.95);
-}
-
-/* Settings Content */
-#settings-content {
-    min-height: calc(100vh - 64px); /* Full height minus navbar */
-    padding: 1rem;
-}
-
-#settings-content h2 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-
-#settings-content p {
-    font-size: 0.875rem;
-    color: #9ca3af;
-    margin-bottom: 0.5rem;
-}
-
-#settings-content blockquote {
-    font-size: 0.875rem;
-    font-style: italic;
-    color: #14b8a6;
-    margin-bottom: 0.5rem;
-    padding-left: 1rem;
-    border-left: 2px solid #14b8a6;
-}
-
-/* Radio Button Styles for Mood Filter */
-.radio-container {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.radio-container input[type="radio"] {
-    accent-color: #2dd4bf;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.radio-container label {
-    font-size: 0.875rem;
-    color: #f3f4f6;
-}
-
-/* Infinity Icon */
-.infinity-icon {
-    font-size: 1.2em;
-    display: inline-block;
-    transition: color 0.2s;
-}
-
-#loop-btn.active .infinity-icon {
-    color: #2dd4bf;
-}
-
-/* Loop State Label */
-.loop-state-label {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #2dd4bf;
-    color: white;
-    font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 10px;
-    z-index: 10;
-    opacity: 1;
-    transition: opacity 0.5s;
-}
-
-/* No Scrollbar */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
@@ -149,24 +13,80 @@ body {
     scrollbar-width: none;
 }
 
-/* Loader */
-.loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin: 0 auto;
+/* Scrollable Containers */
+#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content {
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    max-height: calc(100vh - 140px); /* Adjusted for navbar, tabs, and player */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 20px;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+#ViTune-results::-webkit-scrollbar,
+#home-content::-webkit-scrollbar,
+#playlists-list::-webkit-scrollbar,
+#likes-list::-webkit-scrollbar,
+#offline-list::-webkit-scrollbar,
+#settings-content::-webkit-scrollbar {
+    display: none;
 }
 
-/* Float Button */
+/* Song Container */
+.song-container {
+    background-color: #1f2937;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.song-container:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.song-transparent {
+    background-color: rgba(31, 41, 55, 0.5) !important;
+}
+
+/* Control Buttons */
+.control-btn {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+/* Navigation and Tabs */
+nav {
+    background: linear-gradient(to right, #1f2937, #374151);
+}
+
+.tab-btn {
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.tab-btn:active {
+    transform: scale(0.95);
+}
+
+/* Search Bar */
+#search-tab .relative {
+    /* margin-top: 10px; */
+    /* z-index: 40; */
+}
+
+/* Audio Player */
+#audio-player {
+    z-index: 40;
+}
+
+/* Floating Button */
 .float-button {
     width: 32px;
     height: 32px;
@@ -253,7 +173,7 @@ body {
     margin: 0;
 }
 
-/* Theme Styles */
+/* Theme and Font Styles */
 .dark {
     background-color: #1f2937;
     color: #f3f4f6;
@@ -266,7 +186,6 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Font Styles */
 .font-poppins { font-family: 'Poppins', sans-serif; }
 .font-roboto { font-family: 'Roboto', sans-serif; }
 .font-open-sans { font-family: 'Open Sans', sans-serif; }
@@ -275,14 +194,12 @@ body {
 .font-arial { font-family: Arial, sans-serif; }
 .font-times { font-family: 'Times New Roman', Times, serif; }
 
-/* Font Sizes */
 .font-xsmall { font-size: 0.75rem; line-height: 1rem; }
 .font-small { font-size: 0.875rem; line-height: 1.25rem; }
 .font-medium { font-size: 1rem; line-height: 1.5rem; }
 .font-large { font-size: 1.125rem; line-height: 1.75rem; }
 .font-xlarge { font-size: 1.25rem; line-height: 1.875rem; }
 
-/* Transparency */
 .transparent-on {
     background-color: rgba(31, 41, 55, 0.5);
 }
@@ -291,18 +208,13 @@ body {
     background-color: rgba(31, 41, 55, 1);
 }
 
-.song-transparent {
-    background-color: rgba(31, 41, 55, 0.5) !important;
-}
-
-/* Progress Bar Colors */
+/* Progress Bar Styles */
 .progress-bar-teal { background-color: #2dd4bf; }
 .progress-bar-red { background-color: #ef4444; }
 .progress-bar-blue { background-color: #3b82f6; }
 .progress-bar-purple { background-color: #a855f7; }
 .progress-bar-pink { background-color: #ec4899; }
 
-/* Progress Bar Styles */
 .progress-bar-simple {
     background-image: none;
 }
@@ -322,15 +234,6 @@ body {
     100% { background-position: 200% 50%; }
 }
 
-/* Tab Buttons */
-.tab-btn {
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-}
-
-.tab-btn:active {
-    transform: scale(0.95);
-}
-
 /* Accent Colors */
 .accent-teal { color: #2dd4bf; }
 .accent-teal:hover { color: #5eead4; }
@@ -339,12 +242,7 @@ body {
 .accent-pink { color: #ec4899; }
 .accent-pink:hover { color: #f472b6; }
 
-/* Navbar */
-nav {
-    background: linear-gradient(to right, #1f2937, #374151);
-}
-
-/* Setting Card */
+/* Settings Card */
 .setting-card {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease;
@@ -354,7 +252,6 @@ nav {
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Select Elements */
 select {
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -364,33 +261,134 @@ select:hover {
     box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3);
 }
 
-/* Animation Speeds */
-.animation-fast { transition-duration: 0.1s; }
-.animation-normal { transition-duration: 0.3s; }
-.animation-slow { transition-duration: 0.5s; }
-
-/* Email Icon */
-.email-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #2dd4bf;
-    color: #1f2937;
-    text-align: center;
-    font-size: 0.875rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
+/* Mood Toggle */
+.mood-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
 }
 
-.email-icon:hover {
-    background-color: #5eead4;
-    color: #111827;
+.mood-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.mood-toggle-label {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4b5563;
+    transition: background-color 0.2s ease;
+    border-radius: 34px;
+}
+
+.mood-toggle-label:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: transform 0.2s ease;
+    border-radius: 50%;
+}
+
+.mood-toggle input:checked + .mood-toggle-label {
+    background-color: #2dd4bf;
+}
+
+.mood-toggle input:checked + .mood-toggle-label:before {
+    transform: translateX(26px);
+}
+
+.mood-toggle-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.mood-toggle input:checked + .mood-toggle-label .mood-toggle-inner:before {
+    content: "ON";
+}
+
+.mood-toggle input:not(:checked) + .mood-toggle-label .mood-toggle-inner:before {
+    content: "OFF";
+}
+
+.mood-toggle-switch {
+    display: none;
+}
+
+/* Loop Icon */
+.infinity-icon {
+    font-size: 1.2em;
+    display: inline-block;
+    transition: color 0.2s;
+}
+
+#loop-btn.active .infinity-icon {
+    color: #2dd4bf;
+}
+
+/* Loop State Label */
+.loop-state-label {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2dd4bf;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    z-index: 10;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+/* Loader */
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Animation Speeds */
+.animation-fast {
+    transition-duration: 0.1s;
+}
+
+.animation-normal {
+    transition-duration: 0.3s;
+}
+
+.animation-slow {
+    transition-duration: 0.5s;
 }
 
 /* Responsive Design */
-@media (max-width: 640px) {
+@media (max-width: stories640px) {
     .song-container {
         width: 100%;
         max-width: 100%;
@@ -405,9 +403,6 @@ select:hover {
     }
     #player-minimal .max-w-\[150px\] {
         max-width: 100px;
-    }
-    .search-bar-container {
-        top: 56px; /* Adjust for smaller screens */
     }
 }
 

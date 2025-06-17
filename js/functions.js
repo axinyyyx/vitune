@@ -112,7 +112,7 @@ $(document).ready(function() {
         $(scrollableContainers).css({
             'overscroll-behavior-y': 'contain',
             'overflow-y': 'auto',
-            'max-height': 'calc(100vh - 120px)',
+            'max-height': 'calc(100vh - 140px)',
             'scrollbar-width': 'none',
             '-ms-overflow-style': 'none'
         });
@@ -174,7 +174,7 @@ $(document).ready(function() {
             progressBarColor: 'teal',
             progressBarStyle: 'simple',
             bitrate: '4',
-            moodFilter: 'on', // Default to 'on' (all songs)
+            moodFilter: 'on',
             accentColor: 'teal',
             animationSpeed: 'normal'
         };
@@ -410,22 +410,6 @@ $(document).ready(function() {
         }
     }
 
-    // Mood Filter Logic
-    function applyMoodFilter(songs) {
-        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
-        if (settings.moodFilter === 'off') {
-            // Filter out sad songs (heuristic: exclude songs with 'sad', 'slow', 'melancholy' in name or album)
-            return songs.filter(song => {
-                const nameLower = song.name.toLowerCase();
-                const albumLower = song.album?.toLowerCase() || '';
-                return !nameLower.includes('sad') && !nameLower.includes('slow') && !nameLower.includes('melancholy') &&
-                       !albumLower.includes('sad') && !albumLower.includes('slow') && !albumLower.includes('melancholy');
-            });
-        }
-        // 'on' shows all songs
-        return songs;
-    }
-
     async function doViTuneSearch(query, noScroll = false) {
         if (!query) return;
         showTab('search');
@@ -454,6 +438,8 @@ $(document).ready(function() {
                 throw new Error(json.message || 'Unknown API error');
             }
 
+            const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+            const isMoodFilterOn = settings.moodFilter === 'on';
             const results = json.data.results;
             if (!results || !results.length) {
                 elements.results.html('<p class="text-center text-sm text-gray-400">No results found. Try another query.</p>');
@@ -463,9 +449,8 @@ $(document).ready(function() {
             }
 
             state.lastSearch = query;
-            const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const bitrateIndex = settings.bitrate || '4';
-            let songs = results
+            const songs = results
                 .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.link)
                 .map(track => {
                     let song_name = textAbstract(track.name, 25);
@@ -486,14 +471,20 @@ $(document).ready(function() {
                         image: track.image?.[1]?.link || 'https://i.pinimg.com/originals/ed/54/d2/ed54d2fa700d36d4f2671e1be84651df.jpg',
                         url: track.downloadUrl[bitrateIndex].link,
                         year: track.year,
-                        quality: bitrateIndex === '4' ? 320 : bitrateIndex === '3' ? 160 : bitrateIndex === '2' ? 96 : 48
+                        quality: bitrateIndex === '4' ? 320 : bitrateIndex === '3' ? 160 : bitrateIndex === '2' ? 96 : 48,
+                        mood: track.mood || 'unknown' // Assuming API provides mood metadata
                     };
                     state.resultsObjects[song.id] = { track: song };
                     return song;
+                })
+                .filter(song => {
+                    if (isMoodFilterOn) {
+                        return true; // Show all songs when mood filter is ON
+                    } else {
+                        // Filter out sad songs when mood filter is OFF
+                        return song.mood !== 'sad';
+                    }
                 });
-
-            // Apply mood filter
-            songs = applyMoodFilter(songs);
 
             elements.results.empty();
             if (songs.length) {
@@ -625,62 +616,83 @@ $(document).ready(function() {
 
     function getCurrentContext() {
         let context = { type: 'unknown', songs: [], container: '' };
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
         if ($('#search-tab').is(':visible')) {
+            let songs = Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song);
+            if (!isMoodFilterOn) {
+                songs = songs.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'search',
-                songs: applyMoodFilter(Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song)),
+                songs: songs,
                 container: '#ViTune-results'
             };
         } else if ($('#likes-tab').is(':visible')) {
-            const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+            let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
             likes.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
+            if (!isMoodFilterOn) {
+                likes = likes.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'likes',
-                songs: applyMoodFilter(likes),
+                songs: likes,
                 container: '#likes-list'
             };
         } else if ($('#playlists-tab').is(':visible') && state.currentPlaylistView) {
             const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-            const playlistSongs = playlists[state.currentPlaylistView] || [];
+            let playlistSongs = playlists[state.currentPlaylistView] || [];
             playlistSongs.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
+            if (!isMoodFilterOn) {
+                playlistSongs = playlistSongs.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'playlist',
-                songs: applyMoodFilter(playlistSongs),
+                songs: playlistSongs,
                 container: '#playlists-list'
             };
         } else if ($('#home-tab').is(':visible') && state.currentPlaylistView) {
             const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-            const playlistSongs = playlists[state.currentPlaylistView] || [];
+            let playlistSongs = playlists[state.currentPlaylistView] || [];
             playlistSongs.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
+            if (!isMoodFilterOn) {
+                playlistSongs = playlistSongs.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'playlist',
-                songs: applyMoodFilter(playlistSongs),
+                songs: playlistSongs,
                 container: '#home-content'
             };
         } else if ($('#home-tab').is(':visible')) {
-            const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+            let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
             history.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
+            if (!isMoodFilterOn) {
+                history = history.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'recent',
-                songs: applyMoodFilter([...state.originalHistory]),
+                songs: [...history],
                 container: '#home-content .recent-played'
             };
         } else if ($('#offline-tab').is(':visible')) {
-            const offline = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+            let offline = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
             offline.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
+            if (!isMoodFilterOn) {
+                offline = offline.filter(song => song.mood !== 'sad');
+            }
             context = {
                 type: 'offline',
-                songs: applyMoodFilter(offline),
+                songs: offline,
                 container: '#offline-list'
             };
         }
@@ -1026,8 +1038,10 @@ $(document).ready(function() {
     }
 
     async function loadHomeContent() {
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
-        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
 
@@ -1043,21 +1057,21 @@ $(document).ready(function() {
                 // Skip invalid URLs
             }
         }
-        history = validHistory.slice(0, 8);
+        history = validHistory.slice(0, 8).filter(song => isMoodFilterOn || song.mood !== 'sad');
         state.originalHistory = [...validHistory];
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
             <div class="recent-played grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${history.length ? applyMoodFilter(history).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
+                ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${likes.length ? applyMoodFilter(likes.slice(0, 8)).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+                ${likes.length ? likes.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Offline Songs</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${offlineSongs.length ? applyMoodFilter(offlineSongs.slice(0, 8)).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
+                ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1078,13 +1092,15 @@ $(document).ready(function() {
     }
 
     function renderLikes() {
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
         likes.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
         elements.likesList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${likes.length ? applyMoodFilter(likes).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+                ${likes.length ? likes.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -1092,6 +1108,8 @@ $(document).ready(function() {
     }
 
     function renderPlaylists() {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (state.currentPlaylistView) {
             renderPlaylistSongs(state.currentPlaylistView);
@@ -1123,8 +1141,10 @@ $(document).ready(function() {
     }
 
     function renderPlaylistSongs(playlistName, containerId = '#playlists-list') {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-        const songs = playlists[playlistName] || [];
+        const songs = (playlists[playlistName] || []).filter(song => isMoodFilterOn || song.mood !== 'sad');
         songs.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
@@ -1135,7 +1155,7 @@ $(document).ready(function() {
                     <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${playlistName}"><i class="fa fa-trash"></i> Delete Playlist</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    ${songs.length ? applyMoodFilter(songs).map(song => `
+                    ${songs.length ? songs.map(song => `
                         <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200">
                             <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
                             <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
@@ -1180,13 +1200,15 @@ $(document).ready(function() {
     }
 
     function renderOffline() {
-        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        const isMoodFilterOn = settings.moodFilter === 'on';
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
         offlineSongs.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
         elements.offlineList.html(`
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${offlineSongs.length ? applyMoodFilter(offlineSongs).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
+                ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
             </div>
         `);
         bindCardEventListeners();

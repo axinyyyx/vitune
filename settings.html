@@ -24,141 +24,130 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6">
-        <div class="scroll-container" id="settings-content">
-            <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
-                <h2 class="text-lg font-semibold mb-3">Appearance</h2>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Theme</label>
-                    <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="dark">Dark</option>
-                        <option value="light-mode">Light</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Song Card Transparency</label>
-                    <select id="song-card-transparency" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="off">Off</option>
-                        <option value="on">On</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Transparent Effect (Player)</label>
-                    <select id="transparent-effect" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="off">Off</option>
-                        <option value="on">On</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Font Style</label>
-                    <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="poppins">Poppins</option>
-                        <option value="roboto">Roboto</option>
-                        <option value="open-sans">Open Sans</option>
-                        <option value="lato">Lato</option>
-                        <option value="montserrat">Montserrat</option>
-                        <option value="arial">Arial</option>
-                        <option value="times">Times New Roman</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Font Size</label>
-                    <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="xsmall">Extra Small</option>
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                        <option value="xlarge">Extra Large</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Accent Color</label>
-                    <select id="accent-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="teal">Teal</option>
-                        <option value="purple">Purple</option>
-                        <option value="pink">Pink</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Animation Speed</label>
-                    <select id="animation-speed" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="fast">Fast</option>
-                        <option value="normal">Normal</option>
-                        <option value="slow">Slow</option>
-                    </select>
+    <main class="container mx-auto px-4 py-6 pb-24">
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Appearance</h2>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Theme</label>
+                <select id="theme-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="dark">Dark</option>
+                    <option value="light-mode">Light</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Song Card Transparency</label>
+                <select id="song-card-transparency" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Transparent Effect (Player)</label>
+                <select id="transparent-effect" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Font Style</label>
+                <select id="font-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="poppins">Poppins</option>
+                    <option value="roboto">Roboto</option>
+                    <option value="open-sans">Open Sans</option>
+                    <option value="lato">Lato</option>
+                    <option value="montserrat">Montserrat</option>
+                    <option value="arial">Arial</option>
+                    <option value="times">Times New Roman</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Font Size</label>
+                <select id="font-size" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="xsmall">Extra Small</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                    <option value="xlarge">Extra Large</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Accent Color</label>
+                <select id="accent-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="teal">Teal</option>
+                    <option value="purple">Purple</option>
+                    <option value="pink">Pink</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Animation Speed</label>
+                <select id="animation-speed" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="fast">Fast</option>
+                    <option value="normal">Normal</option>
+                    <option value="slow">Slow</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Playback</h2>
+            <div class="mb-3 flex items-center space-x-4">
+                <label class="text-sm">Mood</label>
+                <div class="mood-toggle">
+                    <input type="checkbox" id="mood-filter" class="hidden" checked>
+                    <label for="mood-filter" class="mood-toggle-label">
+                        <span class="mood-toggle-inner"></span>
+                        <span class="mood-toggle-switch"></span>
+                    </label>
                 </div>
             </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Progress Bar Color</label>
+                <select id="progress-bar-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="teal">Teal</option>
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                    <option value="purple">Purple</option>
+                    <option value="pink">Pink</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Progress Bar Style</label>
+                <select id="progress-bar-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="simple">Simple</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="wave">Wave</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Bitrate</label>
+                <select id="bitrate" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
+                    <option value="1">48kbps</option>
+                    <option value="2">96kbps</option>
+                    <option value="3">160kbps</option>
+                    <option value="4">320kbps</option>
+                </select>
+            </div>
+        </div>
 
-            <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
-                <h2 class="text-lg font-semibold mb-3">Playback</h2>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Progress Bar Color</label>
-                    <select id="progress-bar-color" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="teal">Teal</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="purple">Purple</option>
-                        <option value="pink">Pink</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Progress Bar Style</label>
-                    <select id="progress-bar-style" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="simple">Simple</option>
-                        <option value="gradient">Gradient</option>
-                        <option value="wave">Wave</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Bitrate</label>
-                    <select id="bitrate" class="w-full bg-gray-700 text-white rounded-lg py-1 px-2 text-sm transition duration-200 hover:bg-gray-600">
-                        <option value="1">48kbps</option>
-                        <option value="2">96kbps</option>
-                        <option value="3">160kbps</option>
-                        <option value="4">320kbps</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Mood Filter</label>
-                    <div class="flex space-x-4">
-                        <label class="flex items-center space-x-1">
-                            <input type="radio" name="mood-filter" value="on" class="bg-gray-700 text-teal-500 focus:ring-teal-500">
-                            <span class="text-sm">On (All Songs)</span>
-                        </label>
-                        <label class="flex items-center space-x-1">
-                            <input type="radio" name="mood-filter" value="off" class="bg-gray-700 text-teal-500 focus:ring-teal-500">
-                            <span class="text-sm">Off (Energetic/Upbeat Only)</span>
-                        </label>
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Reset Settings</h2>
+            <button id="reset-settings" class="bg-red-500 text-white rounded-full py-2 px-4 hover:bg-red-600 text-sm transition duration-200">Reset to Default</button>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">About Developer</h2>
+            <div class="flex items-center space-x-4">
+                <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-20 h-20 rounded-full object-cover shadow-md">
+                <div>
+                    <h3 class="text-lg font-bold text-teal-300">Rishabh Kumar</h3>
+                    <p class="text-sm text-gray-400">Have ideas or suggestions? Reach out via social media or email!</p>
+                    <div class="flex space-x-2 mt-1">
+                        <a href="https://github.com/axinyyyx" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-github"></i></a>
+                        <a href="https://www.instagram.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-instagram"></i></a>
+                        <a href="https://x.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-twitter"></i></a>
+                        <a href="https://www.facebook.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-facebook"></i></a>
+                        <a href="mailto:githubsahil4@gmail.com" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-envelope"></i></a>
                     </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
-                <h2 class="text-lg font-semibold mb-3">Reset Settings</h2>
-                <button id="reset-settings" class="bg-red-500 text-white rounded-full py-2 px-4 hover:bg-red-600 text-sm transition duration-200">Reset to Default</button>
-            </div>
-
-            <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
-                <h2 class="text-lg font-semibold mb-3">About Developer</h2>
-                <div class="flex items-center space-x-4">
-                    <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-20 h-20 rounded-full object-cover shadow-md">
-                    <div>
-                        <h3 class="text-lg font-bold text-teal-300">Rishabh Kumar</h3>
-                        <p class="text-sm text-gray-400">Developed with passion since June 16, 2025</p>
-                        <div class="flex space-x-2 mt-1">
-                            <a href="mailto:githubsahil4@gmail.com" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-envelope"></i></a>
-                            <a href="https://github.com/axinyyyx" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-github"></i></a>
-                            <a href="https://www.instagram.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-instagram"></i></a>
-                            <a href="https://x.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-twitter"></i></a>
-                            <a href="https://www.facebook.com/rishabhsahill" target="_blank" class="text-teal-500 hover:text-teal-300 accent-teal"><i class="fa fa-facebook"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <h3 class="text-base font-semibold mb-2">Suggest Features or Report Issues</h3>
-                    <p class="text-sm text-gray-400">Have ideas for new features or found a bug? Reach out via email or social media!</p>
-                    <p class="text-sm text-gray-400 mt-2">Email: <a href="mailto:githubsahil4@gmail.com" class="text-teal-500 hover:text-teal-300">githubsahil4@gmail.com</a></p>
-                    <p class="text-sm text-gray-400 mt-1">Connect with me on social media to share your thoughts!</p>
                 </div>
             </div>
         </div>
@@ -177,7 +166,7 @@
                 progressBarColor: 'teal',
                 progressBarStyle: 'simple',
                 bitrate: '4',
-                moodFilter: 'on',
+                moodFilter: 'on', // Default to ON
                 accentColor: 'teal',
                 animationSpeed: 'normal'
             };
@@ -192,12 +181,12 @@
             $('#progress-bar-color').val(settings.progressBarColor);
             $('#progress-bar-style').val(settings.progressBarStyle);
             $('#bitrate').val(settings.bitrate);
-            $(`input[name="mood-filter"][value="${settings.moodFilter}"]`).prop('checked', true);
+            $('#mood-filter').prop('checked', settings.moodFilter === 'on');
             $('#accent-color').val(settings.accentColor);
             $('#animation-speed').val(settings.animationSpeed);
 
             // Save settings on change
-            $('select, input[name="mood-filter"]').on('change', function() {
+            $('select, #mood-filter').on('change', function() {
                 const newSettings = {
                     theme: $('#theme-style').val(),
                     songCardTransparency: $('#song-card-transparency').val(),
@@ -207,7 +196,7 @@
                     progressBarColor: $('#progress-bar-color').val(),
                     progressBarStyle: $('#progress-bar-style').val(),
                     bitrate: $('#bitrate').val(),
-                    moodFilter: $('input[name="mood-filter"]:checked').val(),
+                    moodFilter: $('#mood-filter').prop('checked') ? 'on' : 'off',
                     accentColor: $('#accent-color').val(),
                     animationSpeed: $('#animation-speed').val()
                 };
