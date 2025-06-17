@@ -406,7 +406,7 @@ $(document).ready(function() {
             doViTuneSearch(query, true);
             showTab('search');
         } else {
-            doViTuneSearch('Honey Singh', true);
+            'AP%20dhillon', true);
         }
     }
 
