@@ -10,11 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&family=Arial&family=Times+New+Roman" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- <base href="/vitune/"> -->
 </head>
-<body class="bg-gray-900 text-white font-poppins no-scrollbar">
+<body class="bg-gray-900 text-white font-poppins">
     <!-- Navbar -->
-    <nav class="sticky top-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
+    <nav class="fixed top-0 left-0 right-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <img src="img/logo.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
@@ -29,43 +28,43 @@
         </div>
     </nav>
 
-    <!-- Tab Navigation -->
-    <div class="container mx-auto px-4 pt-4">
-        <div class="flex space-x-2 mb-4 overflow-x-auto no-scrollbar">
+    <!-- Main Container -->
+    <div class="fixed top-16 left-0 right-0 bottom-0 flex flex-col mx-auto px-4 pt-4 overflow-hidden">
+        <!-- Tab Navigation -->
+        <div class="flex space-x-2 mb-4 overflow-x-auto no-scrollbar z-40">
             <button class="tab-btn bg-teal-500 text-white rounded-full py-1 px-4 text-sm active transition duration-200" data-tab="home">Home</button>
             <button class="tab-btn bg-gray-800 text-gray-400 rounded-full py-1 px-4 text-sm transition duration-200" data-tab="search">Search</button>
             <button class="tab-btn bg-gray-800 text-gray-400 rounded-full py-1 px-4 text-sm transition duration-200" data-tab="likes">Likes</button>
             <button class="tab-btn bg-gray-800 text-gray-400 rounded-full py-1 px-4 text-sm transition duration-200" data-tab="playlists">Playlists</button>
             <button class="tab-btn bg-gray-800 text-gray-400 rounded-full py-1 px-4 text-sm transition duration-200" data-tab="offline">Offline</button>
         </div>
-    </div>
 
-    <!-- Tab Content -->
-    <div class="container mx-auto px-4 pb-24">
         <!-- Search Bar (only in Search tab) -->
-        <div id="search-tab" class="tab-content hidden">
-            <div class="sticky top-14 bg-gray-900 z-40 pt-4" style="background: none;">
-                <div class="relative">
-                    <input id="ViTune-search-box" type="text" placeholder="Search songs, artists, albums..." class="w-full bg-gray-800 text-white rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-teal-500 transition duration-200">
-                    <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
-                    <i id="clear-search" class="fa fa-times absolute right-3 top-3 text-gray-400 cursor-pointer hidden"></i>
-                </div>
+        <div id="search-tab" class="tab-content hidden flex flex-col flex-grow">
+            <div class="relative mb-4 z-40">
+                <input id="ViTune-search-box" type="text" placeholder="Search songs, artists, albums..." class="w-full bg-gray-800 text-white rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-teal-500 transition duration-200">
+                <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+                <i id="clear-search" class="fa fa-times absolute right-3 top-3 text-gray-400 cursor-pointer hidden"></i>
             </div>
             <p id="status" class="text-sm text-gray-400 mb-4 text-center"></p>
-            <div id="ViTune-results"></div>
-            <button id="loadmore" class="bg-teal-500Intelligence text-white rounded-full py-2 px-4 mt-4 hover:bg-teal-600 text-sm mx-auto block hidden transition duration-200">Load More</button>
+            <div id="ViTune-results" class="flex-grow overflow-y-auto no-scrollbar pb-24">
+                <!-- Search results will be injected here -->
+            </div>
+            <button id="loadmore" class="bg-teal-500Intelligence text-white rounded-full py-2 px-4 mt-4 text-sm mx-auto block transition duration-200 bg-teal-500 hover:bg-teal-600">Load More</button>
         </div>
-        <div id="home-tab" class="tab-content">
+
+        <!-- Other Tabs -->
+        <div id="home-tab" class="tab-content flex-grow overflow-y-auto no-scrollbar pb-24">
             <div id="home-content"></div>
         </div>
-        <div id="likes-tab" class="tab-content hidden">
+        <div id="likes-tab" class="tab-content hidden flex-grow overflow-y-auto no-scrollbar pb-24">
             <div id="likes-list"></div>
         </div>
-        <div id="playlists-tab" class="tab-content hidden">
+        <div id="playlists-tab" class="tab-content hidden flex-grow overflow-y-auto no-scrollbar pb-24">
             <button id="create-playlist-btn" class="bg-teal-500 text-white rounded-full py-2 px-4 mb-4 hover:bg-teal-600 text-sm transition duration-200"><i class="fa fa-plus mr-1"></i>Create Playlist</button>
             <div id="playlists-list"></div>
         </div>
-        <div id="offline-tab" class="tab-content hidden">
+        <div id="offline-tab" class="tab-content hidden flex-grow overflow-y-auto no-scrollbar pb-24">
             <div id="offline-list"></div>
         </div>
     </div>

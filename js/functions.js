@@ -40,7 +40,13 @@ $(document).ready(function() {
         mpopup: $('#mpopupBox'),
         mpLink: $('#mpopupLink'),
         downloadList: $('#download-list'),
-        settingsLink: $('#settings-link')
+        settingsLink: $('#settings-link'),
+        tabContainer: $('#tab-container'),
+        searchContainer: $('#search-container'),
+        createPlaylistModal: $('#create-playlist-modal'),
+        playlistNameInput: $('#playlist-name-input'),
+        submitCreatePlaylist: $('#submit-create-playlist'),
+        cancelCreatePlaylist: $('#cancel-create-playlist')
     };
 
     // State
@@ -56,7 +62,8 @@ $(document).ready(function() {
         allowNavigation: false,
         currentPlaylistView: null,
         isTransitioning: false,
-        originalHistory: []
+        originalHistory: [],
+        lastPlaybackTime: 0
     };
 
     const STORAGE_KEYS = {
@@ -65,7 +72,9 @@ $(document).ready(function() {
         PLAYLISTS: 'playlists',
         OFFLINE: 'offlineSongs',
         SETTINGS: 'settings',
-        PLAY_QUEUE: 'play_queue'
+        PLAY_QUEUE: 'play_queue',
+        CURRENT_SONG: 'current_song',
+        PLAYBACK_TIME: 'playback_time'
     };
 
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
@@ -89,6 +98,7 @@ $(document).ready(function() {
     function init() {
         applySettings();
         cleanHistory();
+        showTab('home');
         loadHomeContent();
         bindEventListeners();
         handleDirectURL();
@@ -104,24 +114,134 @@ $(document).ready(function() {
         });
         disableRefreshAndZoom();
         disablePullToRefresh();
+        handleLoadMoreVisibility();
+        addCreatePlaylistModal();
+        ensureTabVisibility();
+        ensureSearchBarVisibility();
+        restorePlaybackState();
     }
 
-    // Disable Pull-to-Refresh
+    // Ensure Search Bar Visibility
+    function ensureSearchBarVisibility() {
+        elements.searchContainer.removeClass('hidden').css({
+            display: 'block',
+            position: 'sticky',
+            top: '0',
+            'z-index': '20',
+            'background-color': '#1f2937'
+        });
+        console.log('Search bar ensured visible');
+    }
+
+    // Ensure Tab Visibility
+    function ensureTabVisibility() {
+        elements.tabContainer.removeClass('hidden').css({
+            display: 'flex',
+            position: 'sticky',
+            top: '60px',
+            'z-index': '10',
+            'background-color': '#1f2937'
+        });
+        console.log('Tabs ensured visible');
+    }
+
+    // Add Playlist Creation Modal to DOM
+    function addCreatePlaylistModal() {
+        if (!elements.createPlaylistModal.length) {
+            const modalHtml = `
+                <div id="create-playlist-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                    <div class="bg-gray-800 rounded-lg p-6 w-full max-w-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold text-white">Create New Playlist</h2>
+                        </div>
+                        <input id="playlist-name-input" type="text" placeholder="Playlist Name" class="w-full bg-gray-700 text-white p-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <div class="flex justify-end space-x-2">
+                            <button id="cancel-create-playlist" class="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600">Create</button>
+                            <button id="submit-create-playlist" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(modalHtml);
+            elements.createPlaylistModal = $('#create-playlist-modal');
+            elements.playlistNameInput = $('#playlist-name-input');
+            elements.submitCreatePlaylist = $('#submit-create-playlist');
+            elements.cancelCreatePlaylist = $('#cancel-create-playlist');
+            bindModalEventListeners();
+        }
+    }
+
+    // Bind Modal Event Listeners
+    function bindModalEventListeners() {
+        elements.submitCreatePlaylist.off('click').on('click', () => {
+            console.log('Close create playlist modal');
+            elements.createPlaylistModal.addClass('hidden');
+            elements.playlistNameInput.val('');
+        });
+
+        elements.cancelCreatePlaylist.off('click').on('click', () => {
+            console.log('Create playlist');
+            createPlaylist();
+        });
+    }
+
+    // Restore Playback State
+    function restorePlaybackState() {
+        const savedSong = JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_SONG) || 'null');
+        const savedTime = parseFloat(localStorage.getItem(STORAGE_KEYS.PLAYBACK_TIME) || '0');
+        if (savedSong && savedSong.id) {
+            state.currentSongId = savedSong.id;
+            state.resultsObjects[savedSong.id] = { track: savedSong };
+            state.lastPlaybackTime = savedTime;
+            playAudio(savedSong.url, savedSong.id, savedTime);
+        }
+    }
+
+    // Save Playback State
+    function savePlaybackState() {
+        if (state.currentSongId && state.resultsObjects[state.currentSongId]) {
+            localStorage.setItem(STORAGE_KEYS.CURRENT_SONG, JSON.stringify(state.resultsObjects[state.currentSongId].track));
+            localStorage.setItem(STORAGE_KEYS.PLAYBACK_TIME, elements.player[0].currentTime.toString());
+        }
+    }
+
+    // Disable Pull-to-Refresh and Enable Scroll for Specific Containers
     function disablePullToRefresh() {
-        const scrollableContainers = '#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list, #settings-content';
+        const scrollableContainers = '#ViTune-results, #home-content, #playlists-list, #likes-list, #offline-list';
         $(scrollableContainers).css({
             'overscroll-behavior-y': 'contain',
             'overflow-y': 'auto',
-            'max-height': 'calc(100vh - 140px)',
+            'max-height': 'calc(100vh - 220px)',
             'scrollbar-width': 'none',
-            '-ms-overflow-style': 'none'
+            '-ms-overflow-style': 'none',
+            'padding-bottom': '96px'
         });
         $(scrollableContainers).each(function() {
             this.style.setProperty('::-webkit-scrollbar', 'display: none', 'important');
         });
-        $('body').css('overscroll-behavior-y', 'none');
+        $('body').css({
+            'overscroll-behavior-y': 'none',
+            overflow: 'hidden'
+        });
         $('body').css('touch-action', 'auto');
         $(document).off('touchmove');
+    }
+
+    // Handle Load More Button Visibility
+    function handleLoadMoreVisibility() {
+        const container = elements.results[0];
+        if (!container) return;
+        $(container).off('scroll').on('scroll', () => {
+            const scrollPosition = container.scrollTop + container.clientHeight;
+            const threshold = container.scrollHeight - 50;
+            if (scrollPosition >= threshold && state.lastSearch && Object.keys(state.resultsObjects).length >= 40) {
+                elements.loadMoreBtn.removeClass('hidden');
+            } else {
+                elements.loadMoreBtn.addClass('hidden');
+            }
+            ensureSearchBarVisibility();
+            ensureTabVisibility();
+        });
     }
 
     // Disable Refresh and Zoom
@@ -133,10 +253,12 @@ $(document).ready(function() {
             }
         });
         window.onbeforeunload = (e) => {
-            if (state.allowNavigation || (e.target && e.target.activeElement && e.target.activeElement.href && e.target.activeElement.href.includes('settings.html'))) {
+            if (state.allowNavigation || (e.target.activeElement && e.target.activeElement.href && e.target.activeElement.href.includes('settings.html'))) {
+                savePlaybackState();
                 return;
             }
             e.preventDefault();
+            savePlaybackState();
             e.returnValue = 'Changes you made may not be saved.';
         };
         $(document).on('gesturestart wheel', (e) => {
@@ -212,6 +334,8 @@ $(document).ready(function() {
             const query = $(this).val().trim();
             elements.clearSearch.toggleClass('hidden', !query);
             debouncedSearch(query);
+            ensureSearchBarVisibility();
+            ensureTabVisibility();
         });
 
         elements.clearSearch.off('click').on('click', () => {
@@ -222,6 +346,8 @@ $(document).ready(function() {
         elements.loadMoreBtn.off('click').on('click', () => {
             console.log('Load more clicked');
             nextPage();
+            ensureSearchBarVisibility();
+            ensureTabVisibility();
         });
 
         elements.tabButtons.off('click').on('click', function() {
@@ -229,6 +355,7 @@ $(document).ready(function() {
             console.log('Tab clicked:', tab);
             state.currentPlaylistView = null;
             showTab(tab);
+            ensureSearchBarVisibility();
         });
 
         elements.playPauseBtn.off('click').on('click', (e) => {
@@ -297,12 +424,12 @@ $(document).ready(function() {
 
         elements.createPlaylistBtn.off('click').on('click', () => {
             console.log('Create playlist clicked');
-            createPlaylist();
+            showCreatePlaylistModal();
         });
 
         elements.createPlaylistBtnModal.off('click').on('click', () => {
             console.log('Create playlist modal clicked');
-            createPlaylist();
+            showCreatePlaylistModal();
         });
 
         elements.progressContainer.off('click').on('click', (e) => {
@@ -310,18 +437,34 @@ $(document).ready(function() {
             seekSong(e);
         });
 
-        elements.player.off('timeupdate error').on({
-            timeupdate: updateProgress,
+        elements.player.off('timeupdate error ended play pause').on({
+            timeupdate: () => {
+                updateProgress();
+                savePlaybackState();
+            },
             error: () => {
                 console.error('Playback error:', elements.audioSource.attr('src'));
                 elements.status.text('Error: Song unavailable. Skipping...');
                 state.isTransitioning = false;
                 playNextSong();
+            },
+            ended: () => {
+                console.log('Song ended');
+                playNextSong();
+            },
+            play: () => {
+                state.isPlaying = true;
+                updatePlayPauseButton();
+            },
+            pause: () => {
+                state.isPlaying = false;
+                updatePlayPauseButton();
             }
         });
 
         elements.settingsLink.off('click').on('click', (e) => {
             console.log('Settings link clicked');
+            savePlaybackState();
             state.allowNavigation = true;
             setTimeout(() => {
                 state.allowNavigation = false;
@@ -342,20 +485,68 @@ $(document).ready(function() {
                 console.log('Hash changed:', query);
                 elements.searchBox.val(query);
                 doViTuneSearch(query);
+                showTab('search');
+            } else {
+                showTab('home');
             }
+            ensureSearchBarVisibility();
+            ensureTabVisibility();
         }
 
         $(window).off('settings:updated storage').on('settings:updated storage', (e) => {
             if (e.type === 'storage' && e.key !== STORAGE_KEYS.SETTINGS) return;
             console.log('Settings updated');
             applySettings();
+            updatePlayPauseButton();
         });
+    }
+
+    // Update Play/Pause Button
+    function updatePlayPauseButton() {
+        const icon = elements.playPauseBtn.find('i');
+        icon.removeClass('fa-play fa-pause').addClass(state.isPlaying ? 'fa-pause' : 'fa-play');
+        console.log('Play/pause button updated:', state.isPlaying);
+    }
+
+    // Show Create Playlist Modal
+    function showCreatePlaylistModal() {
+        elements.createPlaylistModal.removeClass('hidden');
+        elements.playlistNameInput.val('').focus();
+        console.log('Showing create playlist modal');
+    }
+
+    // Create Playlist
+    function createPlaylist() {
+        const name = elements.playlistNameInput.val().trim();
+        elements.createPlaylistModal.addClass('hidden');
+        elements.playlistNameInput.val('');
+
+        if (!name) {
+            elements.status.text('Please enter a valid playlist name');
+            return;
+        }
+
+        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
+        if (playlists[name]) {
+            elements.status.text('Playlist already exists!');
+            return;
+        }
+
+        playlists[name] = [];
+        localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
+        renderPlaylists();
+        loadHomeContent();
+        elements.status.text(`Playlist "${name}" created`);
+        console.log('Playlist created:', name);
+        if (!elements.playlistModal.hasClass('hidden') && state.currentSongId) {
+            showPlaylistModal(state.resultsObjects[state.currentSongId].track);
+        }
     }
 
     // Toggle Player View
     function togglePlayerView() {
         state.isDetailedView = !state.isDetailedView;
-        console.log('Toggling player view, new state:', state.isDetailedView);
+        console.log('Toggling player view:', state.isDetailedView);
         if (state.isDetailedView) {
             elements.playerMinimal.addClass('hidden');
             elements.playerDetailed.removeClass('hidden');
@@ -363,8 +554,9 @@ $(document).ready(function() {
         } else {
             elements.playerMinimal.removeClass('hidden');
             elements.playerDetailed.addClass('hidden');
-            console.log('Showing minimal view, hiding detailed view');
+            console.log('Showing minimal view, hiding detailed');
         }
+        updatePlayPauseButton();
     }
 
     // Toggle Loop
@@ -373,14 +565,14 @@ $(document).ready(function() {
         elements.player[0].loop = state.isLooping;
         elements.loopBtn.toggleClass('text-teal-300', state.isLooping);
         elements.loopBtn.toggleClass('active', state.isLooping);
-        console.log('Loop state:', state.isLooping, 'Audio loop attribute:', elements.player[0].loop);
+        console.log('Loop state:', state.isLooping);
 
         $('.loop-state-label').remove();
         const labelText = state.isLooping ? 'ON' : 'OFF';
         const label = $(`<span class="loop-state-label">${labelText}</span>`);
         elements.loopBtn.parent().css('position', 'relative').append(label);
         setTimeout(() => {
-            label.fadeOut(500, () => label.remove());
+            label.fadeOut(1, () => label.remove());
         }, 2000);
     }
 
@@ -396,17 +588,18 @@ $(document).ready(function() {
         state.resultsObjects = {};
         showTab('home');
         window.location.hash = '';
+        ensureSearchBarVisibility();
     }
 
     function handleDirectURL() {
         const hash = decodeURIComponent(window.location.hash.substring(1)).replace(/\+/g, ' ');
         if (hash) {
-            const query = hash;
-            elements.searchBox.val(query);
-            doViTuneSearch(query, true);
+            elements.searchBox.val(hash);
+            doViTuneSearch(hash);
             showTab('search');
         } else {
-            doViTuneSearch('AP%20dhillon', true);
+            doViTuneSearch('AP%20Dhillon', true);
+            showTab('home');
         }
     }
 
@@ -433,18 +626,26 @@ $(document).ready(function() {
         try {
             const response = await fetch(SEARCH_URL + searchQuery, { signal: controller.signal });
             clearTimeout(timeoutId);
-            const json = await response.json();
             if (!response.ok) {
-                throw new Error(json.message || 'Unknown API error');
+                throw new Error(`HTTP ${response.status}`);
             }
-
+            const json = await response.json();
+            console.log('API Response:', json); // Debug API response
             const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const isMoodFilterOn = settings.moodFilter === 'on';
-            const results = json.data.results;
-            if (!results || !results.length) {
-                elements.results.html('<p class="text-center text-sm text-gray-400">No results found. Try another query.</p>');
+            // Adjust to match API response structure (likely json.data.results)
+            const results = json.data?.results || json.results || [];
+
+            if (!results.length) {
+                elements.results.html(`
+                    <div>
+                        <p class="text-center text-sm text-gray-400">No results found. Try another query.</p>
+                        <button id="loadmore" class="bg-teal-500 text-white rounded-full py-2 px-4 mt-4 text-sm hover:bg-teal-600 mx-auto block hidden transition duration-200">Load More</button>
+                    </div>
+                `);
                 elements.status.text('');
                 elements.loadMoreBtn.addClass('hidden');
+                ensureSearchBarVisibility();
                 return;
             }
 
@@ -452,74 +653,73 @@ $(document).ready(function() {
             const bitrateIndex = settings.bitrate || '4';
             const songs = results
                 .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.link)
-                .map(track => {
-                    let song_name = textAbstract(track.name, 25);
-                    let album_name = textAbstract(track.album?.name, 20);
-                    if (album_name === song_name) album_name = '';
-                    const measuredTime = new Date(null);
-                    measuredTime.setSeconds(parseInt(track.duration));
-                    let play_time = measuredTime.toISOString().substr(11, 8);
-                    if (play_time.startsWith('00:0')) play_time = play_time.slice(4);
-                    else if (play_time.startsWith('00:')) play_time = play_time.slice(3);
+                .map(track => ({
+                    id: track.id,
+                    name: textAbstract(track.name, 25),
+                    album: textAbstract(track.album?.name || '', 20),
+                    artist: textAbstract(track.primaryArtists, 30),
+                    duration: formatDuration(track.duration || 0),
+                    image: track.image ? track.image[2]?.link || track.image[1]?.link : 'https://default-image.jpg',
+                    url: track.downloadUrl[bitrateIndex].link,
+                    quality: bitrateIndex === '4' ? '320' : bitrateIndex === '3' ? '160' : bitrateIndex === '2' ? '96' : '64',
+                    mood: track.mood || 'unknown',
+                    year: track.year || ''
+                }))
+                .filter(song => !isMoodFilterOn || song.mood !== 'sad');
 
-                    const song = {
-                        id: track.id,
-                        name: song_name,
-                        album: album_name,
-                        artist: textAbstract(track.primaryArtists, 30),
-                        duration: play_time,
-                        image: track.image?.[1]?.link || 'https://i.pinimg.com/originals/ed/54/d2/ed54d2fa700d36d4f2671e1be84651df.jpg',
-                        url: track.downloadUrl[bitrateIndex].link,
-                        year: track.year,
-                        quality: bitrateIndex === '4' ? 320 : bitrateIndex === '3' ? 160 : bitrateIndex === '2' ? 96 : 48,
-                        mood: track.mood || 'unknown' // Assuming API provides mood metadata
-                    };
-                    state.resultsObjects[song.id] = { track: song };
-                    return song;
-                })
-                .filter(song => {
-                    if (isMoodFilterOn) {
-                        return true; // Show all songs when mood filter is ON
-                    } else {
-                        // Filter out sad songs when mood filter is OFF
-                        return song.mood !== 'sad';
-                    }
-                });
+            songs.forEach(song => {
+                state.resultsObjects[song.id] = { track: song };
+            });
 
-            elements.results.empty();
-            if (songs.length) {
-                elements.results.html(songs.map(song => generateSongCard(song)).join(''));
-                elements.loadMoreBtn.toggleClass('hidden', songs.length < 40);
-                if (!noScroll) {
-                    elements.results[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            } else {
-                elements.results.html('<p class="text-center text-sm text-gray-400">No results found. Try another query.</p>');
-                elements.loadMoreBtn.addClass('hidden');
+            elements.results.html(`
+                <div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                        ${songs.map(song => generateSongCard(song)).join('')}
+                    </div>
+                    <button id="loadmore" class="bg-teal-500 text-white rounded-full py-2 px-4 mt-4 text-sm hover:bg-teal-600 mx-auto block ${songs.length < 40 ? 'hidden' : ''} transition duration-200">Load More</button>
+                </div>
+            `);
+            elements.loadMoreBtn = $('#loadmore');
+            elements.loadMoreBtn.off('click').on('click', () => {
+                console.log('Load more clicked');
+                nextPage();
+            });
+
+            if (!noScroll) {
+                elements.results[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
             elements.status.text('');
             bindCardEventListeners();
+            handleLoadMoreVisibility();
         } catch (error) {
             clearTimeout(timeoutId);
-            elements.status.text(`Error: ${error.name === 'AbortError' ? 'Request timed out' : error.message}`);
-            elements.results.html('<p class="text-center text-sm text-gray-400">Unable to fetch songs.</p>');
-            elements.loadMoreBtn.addClass('hidden');
             console.error('Search error:', error);
+            elements.status.text(`Error: ${error.name === 'AbortError' ? 'Request timed out' : error.message}`);
+            elements.results.html(`
+                <div>
+                    <p class="text-center text-sm text-gray-400">Unable to find songs.</p>
+                    <button id="loadmore" class="bg-teal-500 text-white rounded-full py-2 px-4 mt-4 text-sm hover:bg-teal-600 mx-auto block hidden transition duration-200">Load More</button>
+                </div>
+            `);
+            elements.loadMoreBtn = $('#loadmore');
+            elements.loadMoreBtn.addClass('hidden');
         }
+        ensureSearchBarVisibility();
+        ensureTabVisibility();
     }
 
     function nextPage() {
         if (!state.lastSearch) return;
         state.pageIndex++;
-        doViTuneSearch(state.lastSearch, true);
+        doViTuneSearch(state.lastSearch);
     }
 
     // Playback Functions
-    async function playAudio(audioUrl, songId) {
-        console.log('playAudio called:', { songId, audioUrl });
-        state.isTransitioning = false;
-        state.isTransitioning = true;
+    async function playAudio(audioUrl, songId, startTime = null) {
+        console.log('playAudio called:', { songId, audioUrl, startTime });
+        if (state.isTransitioning) return;
 
+        state.isTransitioning = true;
         const song = state.resultsObjects[songId]?.track;
         if (!song) {
             console.error('Song not found:', songId);
@@ -530,9 +730,11 @@ $(document).ready(function() {
 
         try {
             const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
         } catch (error) {
-            console.error('Song unavailable:', { audioUrl, error });
+            console.error('Song unavailable:', audioUrl);
             elements.status.text('Error: Song unavailable. Skipping...');
             state.isTransitioning = false;
             playNextSong();
@@ -541,6 +743,7 @@ $(document).ready(function() {
 
         try {
             elements.player[0].pause();
+            state.isPlaying = false;
             elements.player[0].currentTime = 0;
             elements.audioSource.removeAttr('src');
             elements.player[0].load();
@@ -550,7 +753,6 @@ $(document).ready(function() {
         }
 
         state.currentSongId = songId;
-        state.isPlaying = false;
         elements.audioSource.attr('src', audioUrl);
         elements.playerName.text(song.name);
         elements.playerNameD.text(song.name);
@@ -566,21 +768,23 @@ $(document).ready(function() {
         }
 
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
-        const existingIndex = history.findIndex(s => s.id === song.id);
+        const existingIndex = history.findIndex(s => s.id === songId);
         if (existingIndex !== -1) {
             history.splice(existingIndex, 1);
         }
         history.unshift(song);
         history = history.slice(0, 50);
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
-        state.resultsObjects[song.id] = { track: song };
         state.originalHistory = [...history];
 
         try {
-            await elements.player[0].load();
+            elements.player[0].load();
+            if (startTime !== null && !isNaN(startTime)) {
+                elements.player[0].currentTime = startTime;
+                console.log('Seeking to saved time:', startTime);
+            }
             await elements.player[0].play();
             state.isPlaying = true;
-            elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
             console.log('Playing song:', song.name);
         } catch (error) {
             console.error('Audio play error:', error);
@@ -588,11 +792,13 @@ $(document).ready(function() {
             playNextSong();
         } finally {
             state.isTransitioning = false;
-            console.log('playAudio completed, isTransitioning:', state.isTransitioning);
+            console.log('playAudio completed:', state.isPlaying);
         }
 
         updateLikeButton();
+        updatePlayPauseButton();
         savePlayQueue();
+        savePlaybackState();
         if ($('#home-tab').is(':visible')) {
             loadHomeContent();
         }
@@ -601,32 +807,34 @@ $(document).ready(function() {
     function togglePlayPause() {
         if (state.isPlaying) {
             elements.player[0].pause();
-            elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
             state.isPlaying = false;
         } else {
             elements.player[0].play().then(() => {
-                elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
                 state.isPlaying = true;
             }).catch(() => {
                 elements.status.text('Error: Unable to play.');
+                state.isPlaying = false;
             });
         }
+        updatePlayPauseButton();
+        savePlaybackState();
         console.log('Play state:', state.isPlaying);
     }
 
     function getCurrentContext() {
-        let context = { type: 'unknown', songs: [], container: '' };
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isMoodFilterOn = settings.moodFilter === 'on';
+        let context = { type: 'unknown', songs: [], containerId: '' };
+
         if ($('#search-tab').is(':visible')) {
-            let songs = Object.values(state.resultsObjects).map(obj => obj.track).filter(song => song);
+            let songs = Object.values(state.resultsObjects).map(obj => obj.track).filter(Boolean);
             if (!isMoodFilterOn) {
                 songs = songs.filter(song => song.mood !== 'sad');
             }
             context = {
-                type: 'search',
+                type: 'songsong',
                 songs: songs,
-                container: '#ViTune-results'
+                containerId: '#ViTune-results'
             };
         } else if ($('#likes-tab').is(':visible')) {
             let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
@@ -639,7 +847,7 @@ $(document).ready(function() {
             context = {
                 type: 'likes',
                 songs: likes,
-                container: '#likes-list'
+                containerId: '#likes-list'
             };
         } else if ($('#playlists-tab').is(':visible') && state.currentPlaylistView) {
             const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
@@ -653,7 +861,7 @@ $(document).ready(function() {
             context = {
                 type: 'playlist',
                 songs: playlistSongs,
-                container: '#playlists-list'
+                containerId: '#playlists-list'
             };
         } else if ($('#home-tab').is(':visible') && state.currentPlaylistView) {
             const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
@@ -667,7 +875,7 @@ $(document).ready(function() {
             context = {
                 type: 'playlist',
                 songs: playlistSongs,
-                container: '#home-content'
+                containerId: '#home-content'
             };
         } else if ($('#home-tab').is(':visible')) {
             let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
@@ -680,7 +888,7 @@ $(document).ready(function() {
             context = {
                 type: 'recent',
                 songs: [...history],
-                container: '#home-content .recent-played'
+                containerId: '#home-content .recent-played'
             };
         } else if ($('#offline-tab').is(':visible')) {
             let offline = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]');
@@ -693,7 +901,7 @@ $(document).ready(function() {
             context = {
                 type: 'offline',
                 songs: offline,
-                container: '#offline-list'
+                containerId: '#offline-list'
             };
         }
         console.log('getCurrentContext:', { type: context.type, songCount: context.songs.length });
@@ -702,7 +910,7 @@ $(document).ready(function() {
 
     function playNextSong() {
         console.log('playNextSong called:', { isTransitioning: state.isTransitioning, currentSongId: state.currentSongId });
-        state.isTransitioning = false;
+        if (state.isTransitioning) return;
         state.isTransitioning = true;
 
         if (state.playQueue.length > 0) {
@@ -719,7 +927,7 @@ $(document).ready(function() {
             console.log('No songs in context:', context.type);
             elements.status.text('No more songs to play.');
             state.isPlaying = false;
-            elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
+            updatePlayPauseButton();
             state.isTransitioning = false;
             return;
         }
@@ -748,14 +956,14 @@ $(document).ready(function() {
             console.log('No next song, stopping');
             elements.status.text('End of playlist.');
             state.isPlaying = false;
-            elements.playPauseBtn.find('i').removeClass('fa-pause').addClass('fa-play');
+            updatePlayPauseButton();
             state.isTransitioning = false;
         }
     }
 
     function playPreviousSong() {
         console.log('playPreviousSong called');
-        state.isTransitioning = false;
+        if (state.isTransitioning) return;
         state.isTransitioning = true;
 
         const context = getCurrentContext();
@@ -793,6 +1001,7 @@ $(document).ready(function() {
         const player = elements.player[0];
         const offset = e.offsetX / elements.progressContainer.width();
         player.currentTime = offset * player.duration;
+        savePlaybackState();
         console.log('Seek to:', player.currentTime);
     }
 
@@ -802,8 +1011,8 @@ $(document).ready(function() {
         if (songData) {
             state.playQueue.unshift(songData);
             savePlayQueue();
-            elements.status.text('Added to Play Next');
-            console.log('Added to play next:', songData.name);
+            elements.status.text('Added to queue');
+            console.log('Added to queue:', songData.name);
         }
     }
 
@@ -815,7 +1024,7 @@ $(document).ready(function() {
         state.playQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAY_QUEUE) || '[]');
     }
 
-    // Like Functions
+    // Likes Functions
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
@@ -824,7 +1033,7 @@ $(document).ready(function() {
         const song = state.resultsObjects[state.currentSongId]?.track;
         if (!song) return;
 
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+        let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
         const index = likes.findIndex(s => s.id === song.id);
         if (index === -1) {
             likes.push(song);
@@ -867,11 +1076,11 @@ $(document).ready(function() {
     function showPlaylistModal(song) {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         elements.playlistOptions.empty();
-        Object.keys(playlists).forEach(name => {
-            const isInPlaylist = playlists[name].some(s => s.id === song.id);
+        Object.keys(playlists).forEach(playlist => {
+            const isInPlaylist = playlists[playlist].some(s => s.id === song.id);
             elements.playlistOptions.append(`
                 <li>
-                    <button class="${isInPlaylist ? 'remove-from-playlist-btn' : 'add-to-playlist-btn'} w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-name="${name}" data-song-id="${song.id}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${isInPlaylist ? '<i class="fa fa-minus mr-1"></i>Remove from' : '<i class="fa fa-plus mr-1"></i>Add to'} ${name}</button>
+                    <button class="${isInPlaylist ? 'remove-from-playlist-btn' : 'add-to-playlist-btn'} w-full text-left px-2 py-1 text-sm text-white hover:bg-gray-500 rounded transition duration-200" data-name="${playlist}" data-song-id="${song.id}" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${isInPlaylist ? '<i class="fa fa-minus mr-1"></i>Remove from' : '<i class="fa fa-plus mr-1"></i>Add to'} ${playlist}</button>
                 </li>
             `);
         });
@@ -897,22 +1106,6 @@ $(document).ready(function() {
         console.log('Playlist modal closed');
     }
 
-    function createPlaylist() {
-        const name = prompt('Enter playlist name:');
-        if (!name || name.trim() === '') return;
-        const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-        if (playlists[name]) {
-            alert('Playlist already exists!');
-            return;
-        }
-        playlists[name] = [];
-        localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
-        renderPlaylists();
-        loadHomeContent();
-        elements.status.text(`Playlist "${name}" created`);
-        console.log('Playlist created:', name);
-    }
-
     function addToPlaylist(playlistName, song) {
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (!playlists[playlistName]) playlists[playlistName] = [];
@@ -927,6 +1120,9 @@ $(document).ready(function() {
                 loadHomeContent();
             }
             console.log('Song added to playlist:', song.name, playlistName);
+            if (!elements.playlistModal.hasClass('hidden')) {
+                showPlaylistModal(song);
+            }
         }
     }
 
@@ -936,7 +1132,7 @@ $(document).ready(function() {
             playlists[playlistName] = playlists[playlistName].filter(s => s.id !== songId);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Removed from "${playlistName}"`);
-            if ($('#playlists-tab').is(':visible' && state.currentPlaylistView === playlistName)) {
+            if ($('#playlists-tab').is(':visible') && state.currentPlaylistView === playlistName) {
                 renderPlaylistSongs(playlistName);
             } else if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
@@ -1062,19 +1258,19 @@ $(document).ready(function() {
 
         elements.homeContent.html(`
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Recently Played</h2>
-            <div class="recent-played grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${history.length ? history.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
+            <div class="recent-played grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                ${history.length ? history.map(song => generateSongCard(song)).join('') : '<p class="text-center text-sm text-gray-400">No recent songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Liked Songs</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${likes.length ? likes.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                ${likes.length ? likes.slice(0, 8).map(song => generateSongCard(song)).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Offline Songs</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                ${offlineSongs.length ? offlineSongs.slice(0, 8).map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                ${offlineSongs.length ? offlineSongs.slice(0, 8).map(song => generateSongCard(song)).join('') : '<p class="text-center text-sm text-gray-400">No offline songs.</p>'}
             </div>
             <h2 class="text-lg font-semibold mb-3 text-center sm:text-left">Playlists</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 ${Object.keys(playlists).length ? Object.keys(playlists).map(name => generatePlaylistCard(name, playlists[name])).join('') : '<p class="text-center text-sm text-gray-400">No playlists.</p>'}
             </div>
         `);
@@ -1099,8 +1295,8 @@ $(document).ready(function() {
             state.resultsObjects[song.id] = { track: song };
         });
         elements.likesList.html(`
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${likes.length ? likes.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                ${likes.length ? likes.map(song => generateSongCard(song)).join('') : '<p class="text-center text-sm text-gray-400">No liked songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -1123,7 +1319,7 @@ $(document).ready(function() {
         }
 
         elements.playlistsList.html(`
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 ${Object.keys(playlists).map(name => generatePlaylistCard(name, playlists[name])).join('')}
             </div>
         `);
@@ -1154,7 +1350,7 @@ $(document).ready(function() {
                     <h3 class="text-base font-semibold truncate">${playlistName}</h3>
                     <button class="text-red-500 hover:text-red-400 text-sm delete-playlist-btn" data-name="${playlistName}"><i class="fa fa-trash"></i> Delete Playlist</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                     ${songs.length ? songs.map(song => `
                         <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200">
                             <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
@@ -1207,8 +1403,8 @@ $(document).ready(function() {
             state.resultsObjects[song.id] = { track: song };
         });
         elements.offlineList.html(`
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                ${offlineSongs.length ? offlineSongs.map(generateSongCard).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                ${offlineSongs.length ? offlineSongs.map(song => generateSongCard(song)).join('') : '<p class="text-center text-sm text-gray-400">No songs.</p>'}
             </div>
         `);
         bindCardEventListeners();
@@ -1251,7 +1447,7 @@ $(document).ready(function() {
                 elements.status.text('Error: Song not found.');
                 return;
             }
-            const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
+            let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
             const index = likes.findIndex(s => s.id === songId);
             if (index === -1) {
                 likes.push(song);
@@ -1260,7 +1456,8 @@ $(document).ready(function() {
             } else {
                 likes.splice(index, 1);
                 elements.status.text('Song unliked');
-                $(this).html('<i class="fa fa-heart mr-1"></i>Like');
+                console.log('Unlike button clicked:', song.id);
+                $(this).html('<i class="fa fa-heart-o mr-1"></i>Like');
             }
             localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
             if ($('#likes-tab').is(':visible')) {
@@ -1342,6 +1539,9 @@ $(document).ready(function() {
             renderPlaylists();
         } else if (tabName === 'offline') renderOffline();
         else if (tabName === 'home') loadHomeContent();
+        ensureTabVisibility();
+        ensureSearchBarVisibility();
+        updatePlayPauseButton();
         console.log('Tab shown:', tabName);
     }
 

@@ -9,11 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&family=Arial&family=Times+New+Roman" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- <base href="/vitune/"> -->
 </head>
-<body class="bg-gray-900 text-white font-poppins no-scrollbar transition-all duration-200">
+<body class="bg-gray-900 text-white font-poppins transition-all duration-200 overflow-hidden">
     <!-- Navbar -->
-    <nav class="sticky top-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
+    <nav class="fixed top-0 left-0 right-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 accent-teal transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
             <div class="flex items-center space-x-2">
@@ -24,7 +23,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 pb-24">
+    <main class="container mx-auto px-4 py-6 pb-24 fixed top-16 left-0 right-0 bottom-0 overflow-y-auto no-scrollbar">
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Appearance</h2>
             <div class="mb-3">
@@ -166,7 +165,7 @@
                 progressBarColor: 'teal',
                 progressBarStyle: 'simple',
                 bitrate: '4',
-                moodFilter: 'on', // Default to ON
+                moodFilter: 'on',
                 accentColor: 'teal',
                 animationSpeed: 'normal'
             };

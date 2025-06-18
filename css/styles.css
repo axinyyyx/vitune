@@ -9,6 +9,7 @@ body {
     overscroll-behavior-y: none;
     touch-action: auto;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden; /* Prevent body scrolling */
 }
 
 /* Scrollable Containers */
@@ -17,7 +18,7 @@ body {
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-bottom: 80px; /* Ensure content isn't hidden under audio player */
+    padding-bottom: 80px; /* Space for audio player */
 }
 
 #ViTune-results::-webkit-scrollbar,
@@ -42,6 +43,18 @@ body {
 .song-container:hover {
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
     transform: translateY(-2px);
+}
+
+/* Grid Layout for Cards */
+#ViTune-results .grid,
+#home-content .grid,
+#playlists-list .grid,
+#likes-list .grid,
+#offline-list .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding-top: 16px; /* Space to prevent overlap with header */
 }
 
 /* Control Buttons */
@@ -413,20 +426,9 @@ select:hover {
     font-size: 10px;
 }
 
-/* Search Bar */
-#search-tab .relative {
-    margin-top: 16px; /* Space below tabs */
-    z-index: 40;
-}
-
-#ViTune-results {
-    margin-top: 16px; /* Ensure results start below search bar */
-}
-
-/* Audio Player */
-#audio-player {
-    z-index: 40;
-    bottom: 0;
+/* Load More Button */
+#loadmore {
+    margin-bottom: 24px; /* Space at the bottom of search results */
 }
 
 /* Responsive Design */
@@ -450,17 +452,13 @@ select:hover {
 
 @media (min-width: 640px) and (max-width: 1023px) {
     .song-container {
-        width: calc(50% - 1rem);
         min-width: 180px;
     }
 }
 
 @media (min-width: 1024px) {
-    .song-container {
-        width: calc(20% - 1rem);
-        min-width: 200px;
-    }
     #audio-player {
         padding: 0 10%;
     }
 }
+
