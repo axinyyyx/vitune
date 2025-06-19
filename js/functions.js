@@ -211,8 +211,7 @@ $(document).ready(function() {
             state.currentSongId = savedSong.id;
             state.resultsObjects[savedSong.id] = { track: savedSong };
             state.lastPlaybackTime = savedTime;
-            state.isPlaying = true; // Assume play state should continue
-            playAudio(savedSong.url, savedSong.id, savedTime);
+            playAudio1(savedSong.url, savedSong.id, savedTime);
         }
     }
 
@@ -374,6 +373,7 @@ $(document).ready(function() {
         elements.clearSearch.off('click').on('click', () => {
             console.log('Clear search clicked');
             clearSearch();
+            showTab('search'); // Stay in search tab
         });
 
         elements.loadMoreBtn.off('click').on('click', () => {
@@ -400,7 +400,7 @@ $(document).ready(function() {
         const debouncedNext = debounce(() => {
             console.log('Next clicked (debounced)');
             playNextSong();
-        }, 300);
+        }, 200);
 
         elements.nextBtnMinimal.off('click').on('click', (e) => {
             e.stopPropagation();
@@ -478,7 +478,7 @@ $(document).ready(function() {
             seekSong(e);
         });
 
-        elements.player.off('timeupdate error ended play pause').on({
+        elements.player.off('timeupdate error play pause').on({
             timeupdate: () => {
                 updateProgress();
                 savePlaybackState();
@@ -488,12 +488,6 @@ $(document).ready(function() {
                 elements.status.text('Error: Song unavailable. Skipping...');
                 state.isTransitioning = false;
                 playNextSong();
-            },
-            ended: () => {
-                console.log('Song ended');
-                if (!state.isLooping) {
-                    playNextSong();
-                }
             },
             play: () => {
                 state.isPlaying = true;
@@ -542,6 +536,9 @@ $(document).ready(function() {
             applySettings();
             updatePlayPauseButton();
         });
+
+        // Ensure ended event is bound only once
+        setupAutoPlay();
     }
 
     // Update Play/Pause Button
@@ -629,8 +626,6 @@ $(document).ready(function() {
         state.lastSearch = '';
         state.pageIndex = 1;
         state.resultsObjects = {};
-        showTab('home');
-        window.location.hash = '';
         ensureSearchBarVisibility();
     }
 
@@ -756,10 +751,98 @@ $(document).ready(function() {
         doViTuneSearch(state.lastSearch);
     }
 
+   // Playback Functions
+    async function playAudio(audioUrl, songId) {
+        console.log('playAudio called:', { songId, audioUrl });
+        state.isTransitioning = false;
+        state.isTransitioning = true;
+
+        const song = state.resultsObjects[songId]?.track;
+        if (!song) {
+            console.error('Song not found:', songId);
+            elements.status.text('Error: Song not found.');
+            state.isTransitioning = false;
+            return;
+        }
+
+        try {
+            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            console.error('Song unavailable:', { audioUrl, error });
+            elements.status.text('Error: Song unavailable. Skipping...');
+            state.isTransitioning = false;
+            playNextSong();
+            return;
+        }
+
+        try {
+            elements.player[0].pause();
+            elements.player[0].currentTime = 0;
+            elements.audioSource.removeAttr('src');
+            elements.player[0].load();
+            console.log('Audio element reset');
+        } catch (error) {
+            console.error('Audio reset error:', error);
+        }
+
+        state.currentSongId = songId;
+        state.isPlaying = false;
+        elements.audioSource.attr('src', audioUrl);
+        elements.playerName.text(song.name);
+        elements.playerNameD.text(song.name);
+        elements.playerAlbum.text(song.album || 'Unknown Album');
+        elements.playerImage.attr('src', song.image);
+        elements.playerImageD.attr('src', song.image);
+        elements.audioPlayer.removeClass('hidden');
+        document.title = `${song.name} - ${song.album || 'Unknown Album'}`;
+
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+        if (settings.songCardTransparency === 'on') {
+            $('.song-container, #ViTune-results').addClass('song-transparent');
+        }
+
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+        const existingIndex = history.findIndex(s => s.id === song.id);
+        if (existingIndex !== -1) {
+            history.splice(existingIndex, 1);
+        }
+        history.unshift(song);
+        history = history.slice(0, 50);
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        state.resultsObjects[song.id] = { track: song };
+        state.originalHistory = [...history];
+
+        try {
+            await elements.player[0].load();
+            await elements.player[0].play();
+            state.isPlaying = true;
+            elements.playPauseBtn.find('i').removeClass('fa-play').addClass('fa-pause');
+            console.log('Playing song:', song.name);
+        } catch (error) {
+            console.error('Audio play error:', error);
+            elements.status.text('Error playing song. Skipping...');
+            playNextSong();
+        } finally {
+            state.isTransitioning = false;
+            console.log('playAudio completed, isTransitioning:', state.isTransitioning);
+        }
+
+        updateLikeButton();
+        savePlayQueue();
+        if ($('#home-tab').is(':visible')) {
+            loadHomeContent();
+        }
+    }
+
+    
     // Playback Functions
-    async function playAudio(audioUrl, songId, startTime = null) {
+    async function playAudio1(audioUrl, songId, startTime = null) {
         console.log('playAudio called:', { songId, audioUrl, startTime });
-        if (state.isTransitioning) return;
+        if (state.isTransitioning) {
+            console.log('Transition in progress, aborting playAudio');
+            return;
+        }
 
         state.isTransitioning = true;
         const song = state.resultsObjects[songId]?.track;
@@ -879,11 +962,11 @@ $(document).ready(function() {
 
         if ($('#search-tab').is(':visible')) {
             let songs = Object.values(state.resultsObjects).map(obj => obj.track).filter(Boolean);
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 songs = songs.filter(song => song.mood !== 'sad');
             }
             context = {
-                type: 'songsong',
+                type: 'songs',
                 songs: songs,
                 containerId: '#ViTune-results'
             };
@@ -892,7 +975,7 @@ $(document).ready(function() {
             likes.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 likes = likes.filter(song => song.mood !== 'sad');
             }
             context = {
@@ -906,7 +989,7 @@ $(document).ready(function() {
             playlistSongs.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 playlistSongs = playlistSongs.filter(song => song.mood !== 'sad');
             }
             context = {
@@ -920,7 +1003,7 @@ $(document).ready(function() {
             playlistSongs.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 playlistSongs = playlistSongs.filter(song => song.mood !== 'sad');
             }
             context = {
@@ -933,7 +1016,7 @@ $(document).ready(function() {
             history.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 history = history.filter(song => song.mood !== 'sad');
             }
             context = {
@@ -946,7 +1029,7 @@ $(document).ready(function() {
             offline.forEach(song => {
                 state.resultsObjects[song.id] = { track: song };
             });
-            if (!isMoodFilterOn) {
+            if (isMoodFilterOn) {
                 offline = offline.filter(song => song.mood !== 'sad');
             }
             context = {
@@ -961,9 +1044,13 @@ $(document).ready(function() {
 
     function playNextSong() {
         console.log('playNextSong called:', { isTransitioning: state.isTransitioning, currentSongId: state.currentSongId });
-        if (state.isTransitioning) return;
+        if (state.isTransitioning) {
+            console.log('Transition in progress, aborting playNextSong');
+            return;
+        }
         state.isTransitioning = true;
 
+        // Check play queue first
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             console.log('Playing from queue:', nextSong.name);
@@ -986,9 +1073,13 @@ $(document).ready(function() {
         let currentIndex = context.songs.findIndex(song => song.id === state.currentSongId);
         console.log('Current index:', currentIndex);
 
-        if (currentIndex === -1) {
-            currentIndex = -1;
-            console.log('Current song not found, starting from first');
+        if (currentIndex === -1 && context.songs.length > 0) {
+            // If current song not found in context, start from first song
+            const nextSong = context.songs[0];
+            console.log('Current song not found, playing first song:', nextSong.name);
+            state.resultsObjects[nextSong.id] = { track: nextSong };
+            playAudio(nextSong.url, nextSong.id);
+            return;
         }
 
         let nextSong = null;
@@ -1013,8 +1104,11 @@ $(document).ready(function() {
     }
 
     function playPreviousSong() {
-        console.log('playPreviousSong called');
-        if (state.isTransitioning) return;
+        console.log('playPreviousSong called:', { isTransitioning: state.isTransitioning, currentSongId: state.currentSongId });
+        if (state.isTransitioning) {
+            console.log('Transition in progress, aborting playPreviousSong');
+            return;
+        }
         state.isTransitioning = true;
 
         const currentTime = elements.player[0].currentTime;
@@ -1044,9 +1138,18 @@ $(document).ready(function() {
 
         const currentIndex = context.songs.findIndex(song => song.id === state.currentSongId);
         if (currentIndex <= 0) {
-            console.log('No previous song');
-            elements.status.text('No previous song.');
-            state.isTransitioning = false;
+            console.log('No previous song, restarting current');
+            elements.player[0].currentTime = 0;
+            elements.player[0].play().then(() => {
+                state.isPlaying = true;
+                updatePlayPauseButton();
+                state.isTransitioning = false;
+                console.log('Restarting current song (no previous)');
+            }).catch(error => {
+                console.error('Restart error:', error);
+                elements.status.text('Error restarting song.');
+                state.isTransitioning = false;
+            });
             return;
         }
 
@@ -1307,8 +1410,8 @@ $(document).ready(function() {
     async function loadHomeContent() {
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isMoodFilterOn = settings.moodFilter === 'on';
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
-        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => !isMoodFilterOn || song.mood !== 'sad');
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => !isMoodFilterOn || song.mood !== 'sad');
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
 
@@ -1324,7 +1427,7 @@ $(document).ready(function() {
                 // Skip invalid URLs
             }
         }
-        history = validHistory.slice(0, 8).filter(song => isMoodFilterOn || song.mood !== 'sad');
+        history = validHistory.slice(0, 8).filter(song => !isMoodFilterOn || song.mood !== 'sad');
         state.originalHistory = [...validHistory];
 
         elements.homeContent.html(`
@@ -1361,7 +1464,7 @@ $(document).ready(function() {
     function renderLikes() {
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isMoodFilterOn = settings.moodFilter === 'on';
-        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
+        const likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]').filter(song => !isMoodFilterOn || song.mood !== 'sad');
         likes.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
@@ -1411,7 +1514,7 @@ $(document).ready(function() {
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isMoodFilterOn = settings.moodFilter === 'on';
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
-        const songs = (playlists[playlistName] || []).filter(song => isMoodFilterOn || song.mood !== 'sad');
+        const songs = (playlists[playlistName] || []).filter(song => !isMoodFilterOn || song.mood !== 'sad');
         songs.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
@@ -1469,7 +1572,7 @@ $(document).ready(function() {
     function renderOffline() {
         const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
         const isMoodFilterOn = settings.moodFilter === 'on';
-        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => isMoodFilterOn || song.mood !== 'sad');
+        const offlineSongs = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE) || '[]').filter(song => !isMoodFilterOn || song.mood !== 'sad');
         offlineSongs.forEach(song => {
             state.resultsObjects[song.id] = { track: song };
         });
@@ -1488,7 +1591,6 @@ $(document).ready(function() {
             console.log('Play button clicked:', songId);
             const song = state.resultsObjects[songId]?.track;
             if (song) {
-                // If the same song is clicked, toggle play/pause
                 if (state.currentSongId === songId) {
                     togglePlayPause();
                 } else {
@@ -1622,10 +1724,21 @@ $(document).ready(function() {
     }
 
     function setupAutoPlay() {
+        // Remove any existing 'ended' event listeners to prevent duplicates
         elements.player.off('ended').on('ended', () => {
-            console.log('Song ended:', { isLooping: state.isLooping });
+            console.log('Song ended:', { isLooping: state.isLooping, currentSongId: state.currentSongId });
             if (!state.isLooping) {
                 playNextSong();
+            } else {
+                elements.player[0].currentTime = 0;
+                elements.player[0].play().then(() => {
+                    state.isPlaying = true;
+                    updatePlayPauseButton();
+                    console.log('Looping current song');
+                }).catch(error => {
+                    console.error('Loop play error:', error);
+                    elements.status.text('Error looping song.');
+                });
             }
         });
     }
