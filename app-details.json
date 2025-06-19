@@ -1,0 +1,64 @@
+{
+    "name": "ViTune",
+    "description": "ViTune is your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs and dive into music with a sleek, modern interface.",
+    "version": "1.1-R",
+    "lastUpdated": "June 20, 2025",
+    "releaseDate": "June 10, 2025",
+    "icon": "img/logo.png",
+    "apkUrl": "https://github.com/axinyyyx/vitune/releases/download/1.1.R.2/ViTune.Web_2_1.1-R.apk",
+    "browserUrl": "https://vitune-web.vercel.app/",
+    "screenshots": [
+        "img/screenshot0.jpg",
+        "img/screenshot1.jpg",
+        "img/screenshot2.jpg",
+        "img/screenshot3.jpg",
+        "img/screenshot4.jpg",
+        "img/screenshot5.jpg",
+        "img/screenshot6.jpg"
+    ],
+    "developer": {
+        "name": "Rishabh Kumar",
+        "icon": "https://avatars.githubusercontent.com/u/164033987?v=4",
+        "contacts": [
+            {
+                "platform": "GitHub",
+                "url": "https://github.com/axinyyyx",
+                "icon": "github"
+            },
+            {
+                "platform": "Instagram",
+                "url": "https://www.instagram.com/rishabhsahill",
+                "icon": "instagram"
+            },
+            {
+                "platform": "Twitter",
+                "url": "https://x.com/rishabhsahill",
+                "icon": "twitter"
+            },
+            {
+                "platform": "Facebook",
+                "url": "https://www.facebook.com/rishabhsahill",
+                "icon": "facebook"
+            },
+            {
+                "platform": "Email",
+                "url": "mailto:githubsahil4@gmail.com",
+                "icon": "envelope"
+            }
+        ]
+    },
+    "features": [
+        "Seamless music streaming with high-quality audio (up to 320kbps)",
+        "Create and manage personalized playlists",
+        "Offline song downloads for on-the-go listening",
+        "Advanced search for songs, artists, and albums",
+        "Mood-based music recommendations",
+        "Customizable themes (Dark/Light) and accent colors",
+        "Adjustable font styles and sizes for accessibility",
+        "Dynamic progress bar styles (Simple, Gradient, Wave)",
+        "Data backup and restore functionality",
+        "Transparent effects for song cards and player",
+        "Variable animation speeds for a tailored experience",
+        "Improved stability and bug fixes for enhanced performance (v1.1.R.2)"
+    ]
+}

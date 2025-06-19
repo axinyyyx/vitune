@@ -14,7 +14,7 @@
     <!-- Navbar -->
     <nav class="fixed top-0 left-0 right-0 bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <a onclick="history.back();" class="text-teal-500 hover:text-teal-300 accent-teal transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
+            <a href="index.html" class="text-teal-500 hover:text-teal-300 accent-teal transition duration-200"><i class="fa fa-arrow-left text-lg"></i></a>
             <div class="flex items-center space-x-2">
                 <img src="img/logo.png" alt="ViTune Logo" class="w-8 h-8 object-cover">
                 <h1 class="text-xl font-bold">ViTune Settings</h1>
@@ -24,6 +24,18 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-6 pb-24 fixed top-16 left-0 right-0 bottom-0 overflow-y-auto no-scrollbar">
+        <!-- Update Notification -->
+        <div id="update-notification" class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200 hidden">
+            <h2 class="text-lg font-semibold mb-3">Update Available</h2>
+            <p id="update-message" class="text-sm text-gray-400 mb-3"></p>
+            <div class="flex space-x-4">
+                <a id="apk-download" href="#" target="_blank" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm transition duration-200">Download APK</a>
+                <a id="browser-download" href="#" target="_blank" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm transition duration-200">Download for Browser</a>
+                <a href="app-details.html" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm transition duration-200">View Details</a>
+            </div>
+        </div>
+
+        <!-- Appearance Settings -->
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Appearance</h2>
             <div class="mb-3">
@@ -87,6 +99,7 @@
             </div>
         </div>
 
+        <!-- Playback Settings -->
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Playback</h2>
             <div class="mb-3 flex items-center space-x-4">
@@ -128,6 +141,7 @@
             </div>
         </div>
 
+        <!-- Data Backup -->
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Data Backup</h2>
             <div class="flex space-x-4">
@@ -137,6 +151,7 @@
             </div>
         </div>
 
+        <!-- Reset -->
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Reset</h2>
             <div class="flex space-x-4">
@@ -145,7 +160,8 @@
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-lg p-4 setting-card transition-all duration-200">
+        <!-- About Developer -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">About Developer</h2>
             <div class="flex items-center space-x-4">
                 <img src="https://avatars.githubusercontent.com/u/164033987?v=4" alt="Rishabh Kumar" class="w-20 h-20 rounded-full object-cover shadow-md">
@@ -166,6 +182,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/backup.js"></script>
+    <script src="js/app-details.js"></script>
     <script>
         $(document).ready(function() {
             const STORAGE_KEYS = { 
@@ -211,7 +228,7 @@
                     theme: $('#theme-style').val(),
                     songCardTransparency: $('#song-card-transparency').val(),
                     transparentEffect: $('#transparent-effect').val(),
-                    fontStyle: $('#font-style').val(),
+                    fontStyle: $('#font-style').text(),
                     fontSize: $('#font-size').val(),
                     progressBarColor: $('#progress-bar-color').val(),
                     progressBarStyle: $('#progress-bar-style').val(),
@@ -225,7 +242,7 @@
             });
 
             // Reset settings
-            $('#reset-settings').on('click', function() {
+            $('#reset-settings').click(function() {
                 if (confirm('Reset all settings to default? This will not affect playlists, likes, or other data.')) {
                     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
                     $(window).trigger('settings:updated');
@@ -235,7 +252,7 @@
             });
 
             // Reset all data
-            $('#reset-data').on('click', function() {
+            $('#reset-data').click(function() {
                 if (confirm('Reset all data? This will clear settings, playlists, likes, recent plays, offline songs, play queue, and current song.')) {
                     localStorage.removeItem(STORAGE_KEYS.HISTORY);
                     localStorage.removeItem(STORAGE_KEYS.LIKES);
