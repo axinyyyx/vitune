@@ -129,6 +129,15 @@
         </div>
 
         <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
+            <h2 class="text-lg font-semibold mb-3">Data Backup</h2>
+            <div class="flex space-x-4">
+                <button id="export-data" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm transition duration-200">Export Data</button>
+                <button id="import-data" class="bg-teal-500 text-white rounded-full py-2 px-4 hover:bg-teal-600 text-sm transition duration-200">Import Data</button>
+                <input type="file" id="file-input" accept=".json" class="hidden">
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-4 mb-4 setting-card transition-all duration-200">
             <h2 class="text-lg font-semibold mb-3">Reset Settings</h2>
             <button id="reset-settings" class="bg-red-500 text-white rounded-full py-2 px-4 hover:bg-red-600 text-sm transition duration-200">Reset to Default</button>
         </div>
@@ -153,9 +162,16 @@
     </main>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/backup.js"></script>
     <script>
         $(document).ready(function() {
-            const STORAGE_KEYS = { SETTINGS: 'settings' };
+            const STORAGE_KEYS = { 
+                SETTINGS: 'settings',
+                HISTORY: 'listening_history',
+                LIKES: 'likes',
+                PLAYLISTS: 'playlists',
+                OFFLINE: 'offlineSongs'
+            };
             const defaultSettings = {
                 theme: 'dark',
                 songCardTransparency: 'off',
@@ -210,6 +226,25 @@
                     $(window).trigger('settings:updated');
                     location.reload();
                 }
+            });
+
+            // Backup and Restore
+            $('#export-data').on('click', function() {
+                exportData();
+            });
+
+            $('#import-data').on('click', function() {
+                $('#file-input').click();
+            });
+
+            $('#file-input').on('change', function(event) {
+                const file = event.target.files[0];
+                if (file && file.name.endsWith('.json')) {
+                    importData(file);
+                } else {
+                    alert('Please select a valid .json file.');
+                }
+                event.target.value = ''; // Reset file input
             });
         });
     </script>
