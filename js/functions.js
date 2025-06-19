@@ -19,6 +19,7 @@ $(document).ready(function() {
         prevBtn: $('#prev-btn'),
         nextBtn: $('#next-btn'),
         nextBtnMinimal: $('#next-btn-minimal'),
+        prevBtnMinimal: $('#prev-btn-minimal'),
         loopBtn: $('#loop-btn'),
         likeBtn: $('#like-btn'),
         playlistBtn: $('#playlist-btn'),
@@ -63,7 +64,8 @@ $(document).ready(function() {
         currentPlaylistView: null,
         isTransitioning: false,
         originalHistory: [],
-        lastPlaybackTime: 0
+        lastPlaybackTime: 0,
+        userInteracted: false
     };
 
     const STORAGE_KEYS = {
@@ -80,6 +82,7 @@ $(document).ready(function() {
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
+    const DEFAULT_SONG_IMAGE = 'https://via.placeholder.com/500';
 
     // Debounce Function
     function debounce(func, wait) {
@@ -119,6 +122,23 @@ $(document).ready(function() {
         ensureTabVisibility();
         ensureSearchBarVisibility();
         restorePlaybackState();
+        setupVolumeListener();
+        setupUserInteraction();
+    }
+
+    // Setup User Interaction Tracking
+    function setupUserInteraction() {
+        ['click', 'touchstart', 'keydown'].forEach(event => {
+            document.addEventListener(event, () => {
+                state.userInteracted = true;
+                console.log('User interaction detected, enabling autoplay');
+                if (!state.isPlaying && state.currentSongId) {
+                    elements.player[0].play().catch(error => {
+                        console.error('Post-interaction play error:', error);
+                    });
+                }
+            }, { once: true });
+        });
     }
 
     // Ensure Search Bar Visibility
@@ -130,7 +150,6 @@ $(document).ready(function() {
             'z-index': '20',
             'background-color': '#1f2937'
         });
-        console.log('Search bar ensured visible');
     }
 
     // Ensure Tab Visibility
@@ -142,7 +161,6 @@ $(document).ready(function() {
             'z-index': '10',
             'background-color': '#1f2937'
         });
-        console.log('Tabs ensured visible');
     }
 
     // Add Playlist Creation Modal to DOM
@@ -193,6 +211,7 @@ $(document).ready(function() {
             state.currentSongId = savedSong.id;
             state.resultsObjects[savedSong.id] = { track: savedSong };
             state.lastPlaybackTime = savedTime;
+            state.isPlaying = true; // Assume play state should continue
             playAudio(savedSong.url, savedSong.id, savedTime);
         }
     }
@@ -203,6 +222,20 @@ $(document).ready(function() {
             localStorage.setItem(STORAGE_KEYS.CURRENT_SONG, JSON.stringify(state.resultsObjects[state.currentSongId].track));
             localStorage.setItem(STORAGE_KEYS.PLAYBACK_TIME, elements.player[0].currentTime.toString());
         }
+    }
+
+    // Setup Volume Listener
+    function setupVolumeListener() {
+        elements.player.on('volumechange', () => {
+            const volume = elements.player[0].volume;
+            console.log('Volume changed:', volume);
+            if (volume === 0 && state.isPlaying) {
+                elements.player[0].pause();
+                state.isPlaying = false;
+                updatePlayPauseButton();
+                elements.status.text('Paused due to volume set to 0');
+            }
+        });
     }
 
     // Disable Pull-to-Refresh and Enable Scroll for Specific Containers
@@ -371,12 +404,26 @@ $(document).ready(function() {
 
         elements.nextBtnMinimal.off('click').on('click', (e) => {
             e.stopPropagation();
+            console.log('Minimal next button clicked');
             debouncedNext();
         });
 
         elements.nextBtn.off('click').on('click', (e) => {
             e.stopPropagation();
+            console.log('Detailed next button clicked');
             debouncedNext();
+        });
+
+        elements.prevBtnMinimal.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Minimal previous button clicked');
+            playPreviousSong();
+        });
+
+        elements.prevBtn.off('click').on('click', (e) => {
+            e.stopPropagation();
+            console.log('Detailed previous button clicked');
+            playPreviousSong();
         });
 
         elements.playerMinimal.off('click').on('click', (e) => {
@@ -391,12 +438,6 @@ $(document).ready(function() {
                 console.log('Detailed player clicked, current state:', state.isDetailedView);
                 togglePlayerView();
             }
-        });
-
-        elements.prevBtn.off('click').on('click', (e) => {
-            e.stopPropagation();
-            console.log('Previous clicked');
-            playPreviousSong();
         });
 
         elements.loopBtn.off('click').on('click', (e) => {
@@ -450,7 +491,9 @@ $(document).ready(function() {
             },
             ended: () => {
                 console.log('Song ended');
-                playNextSong();
+                if (!state.isLooping) {
+                    playNextSong();
+                }
             },
             play: () => {
                 state.isPlaying = true;
@@ -630,10 +673,9 @@ $(document).ready(function() {
                 throw new Error(`HTTP ${response.status}`);
             }
             const json = await response.json();
-            console.log('API Response:', json); // Debug API response
+            console.log('API Response:', json);
             const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const isMoodFilterOn = settings.moodFilter === 'on';
-            // Adjust to match API response structure (likely json.data.results)
             const results = json.data?.results || json.results || [];
 
             if (!results.length) {
@@ -659,7 +701,7 @@ $(document).ready(function() {
                     album: textAbstract(track.album?.name || '', 20),
                     artist: textAbstract(track.primaryArtists, 30),
                     duration: formatDuration(track.duration || 0),
-                    image: track.image ? track.image[2]?.link || track.image[1]?.link : 'https://default-image.jpg',
+                    image: track.image && track.image[2]?.link || track.image && track.image[1]?.link || DEFAULT_SONG_IMAGE,
                     url: track.downloadUrl[bitrateIndex].link,
                     quality: bitrateIndex === '4' ? '320' : bitrateIndex === '3' ? '160' : bitrateIndex === '2' ? '96' : '64',
                     mood: track.mood || 'unknown',
@@ -757,8 +799,12 @@ $(document).ready(function() {
         elements.playerName.text(song.name);
         elements.playerNameD.text(song.name);
         elements.playerAlbum.text(song.album || 'Unknown Album');
-        elements.playerImage.attr('src', song.image);
-        elements.playerImageD.attr('src', song.image);
+        elements.playerImage.attr('src', song.image).on('error', () => {
+            elements.playerImage.attr('src', DEFAULT_SONG_IMAGE);
+        });
+        elements.playerImageD.attr('src', song.image).on('error', () => {
+            elements.playerImageD.attr('src', DEFAULT_SONG_IMAGE);
+        });
         elements.audioPlayer.removeClass('hidden');
         document.title = `${song.name} - ${song.album || 'Unknown Album'}`;
 
@@ -805,13 +851,18 @@ $(document).ready(function() {
     }
 
     function togglePlayPause() {
+        if (!state.currentSongId) {
+            elements.status.text('No song selected.');
+            return;
+        }
         if (state.isPlaying) {
             elements.player[0].pause();
             state.isPlaying = false;
         } else {
             elements.player[0].play().then(() => {
                 state.isPlaying = true;
-            }).catch(() => {
+            }).catch(error => {
+                console.error('Toggle play error:', error);
                 elements.status.text('Error: Unable to play.');
                 state.isPlaying = false;
             });
@@ -966,6 +1017,23 @@ $(document).ready(function() {
         if (state.isTransitioning) return;
         state.isTransitioning = true;
 
+        const currentTime = elements.player[0].currentTime;
+        if (currentTime > 5) {
+            // Restart current song if played more than 5 seconds
+            elements.player[0].currentTime = 0;
+            elements.player[0].play().then(() => {
+                state.isPlaying = true;
+                updatePlayPauseButton();
+                state.isTransitioning = false;
+                console.log('Restarting current song');
+            }).catch(error => {
+                console.error('Restart error:', error);
+                elements.status.text('Error restarting song.');
+                state.isTransitioning = false;
+            });
+            return;
+        }
+
         const context = getCurrentContext();
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
@@ -1011,8 +1079,11 @@ $(document).ready(function() {
         if (songData) {
             state.playQueue.unshift(songData);
             savePlayQueue();
-            elements.status.text('Added to queue');
-            console.log('Added to queue:', songData.name);
+            elements.status.text('Added to play next');
+            console.log('Added to play next:', songData.name);
+        } else {
+            console.error('Song not found for play next:', song);
+            elements.status.text('Error: Song not found.');
         }
     }
 
@@ -1204,7 +1275,7 @@ $(document).ready(function() {
     function generateSongCard(song) {
         return `
             <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 play-btn" data-song-id="${song.id}">
-                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
+                <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}" onerror="this.src='${DEFAULT_SONG_IMAGE}'">
                 <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
                 <p class="text-xs text-gray-400 truncate mb-1 play-btn" data-song-id="${song.id}">${song.album || '-'}</p>
                 <p class="text-xs text-gray-400 truncate play-btn" data-song-id="${song.id}">${song.artist}</p>
@@ -1213,8 +1284,8 @@ $(document).ready(function() {
                     <button class="three-dot-btn text-white hover:bg-gray-600 rounded-full p-1 transition duration-150"><i class="fa fa-ellipsis-v"></i></button>
                     <div class="three-dot-dropdown hidden absolute right-0 mt-2 bg-gray-600 rounded-lg shadow-lg p-2 w-36 z-30">
                         <button class="like-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-id="${song.id}"><i class="fa fa-heart mr-1"></i>${isLiked(song.id) ? 'Unlike' : 'Like'}</button>
-                        <button class="playlist-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'><i class="fa fa-plus mr-1"></i>Add to Playlist</button>
-                        <button class="play-next-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'><i class="fa fa-step-forward mr-1"></i>Play Next</button>
+                        <button class="playlist-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${'<i class="fa fa-plus mr-1"></i>Add to Playlist'}</button>
+                        <button class="play-next-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>${'<i class="fa fa-step-forward mr-1"></i>Play Next'}</button>
                         <button class="download-btn block w-full text-left px-2 py-1 text-sm text-white hover:bg-teal-500 rounded transition duration-200" data-id="${song.id}"><i class="fa fa-download mr-1"></i>Download</button>
                     </div>
                 </div>
@@ -1226,7 +1297,7 @@ $(document).ready(function() {
         const image = songs.length ? songs[0].image : DEFAULT_PLAYLIST_IMAGE;
         return `
             <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200 playlist-card cursor-pointer" data-playlist-name="${name}">
-                <img src="${image}" alt="${name} Playlist" class="w-full h-40 object-cover rounded-lg mb-4">
+                <img src="${image}" alt="${name} Playlist" class="w-full h-40 object-cover rounded-lg mb-4" onerror="this.src='${DEFAULT_SONG_IMAGE}'">
                 <h3 class="text-sm font-semibold mb-1 truncate">${name}</h3>
                 <p class="text-xs text-gray-400 truncate">${songs.length} song${songs.length !== 1 ? 's' : ''}</p>
             </div>
@@ -1353,7 +1424,7 @@ $(document).ready(function() {
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                     ${songs.length ? songs.map(song => `
                         <div class="song-container bg-gray-800 rounded-lg p-4 relative shadow-md hover:shadow-lg transition-all duration-200">
-                            <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}">
+                            <img src="${song.image}" alt="Song Image" class="w-full h-40 object-cover rounded-lg mb-4 play-btn" data-song-id="${song.id}" onerror="this.src='${DEFAULT_SONG_IMAGE}'">
                             <h3 class="text-sm font-semibold mb-1 truncate play-btn" data-song-id="${song.id}">${song.name}</h3>
                             <p class="text-xs text-gray-400 truncate mb-1 play-btn" data-song-id="${song.id}">${song.album || '-'}</p>
                             <p class="text-xs text-gray-400 truncate play-btn" data-song-id="${song.id}">${song.artist}</p>
@@ -1417,7 +1488,12 @@ $(document).ready(function() {
             console.log('Play button clicked:', songId);
             const song = state.resultsObjects[songId]?.track;
             if (song) {
-                playAudio(song.url, songId);
+                // If the same song is clicked, toggle play/pause
+                if (state.currentSongId === songId) {
+                    togglePlayPause();
+                } else {
+                    playAudio(song.url, songId);
+                }
             } else {
                 console.error('Song not found for play:', songId);
                 elements.status.text('Error: Song not found.');
