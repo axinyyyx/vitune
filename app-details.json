@@ -1,7 +1,7 @@
 {
     "name": "ViTune",
     "description": "ViTune is your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs and dive into music with a sleek, modern interface.",
-    "version": "1.1-R",
+    "version": "1.1.R.2",
     "lastUpdated": "June 20, 2025",
     "releaseDate": "June 10, 2025",
     "icon": "img/logo.png",
@@ -23,27 +23,27 @@
             {
                 "platform": "GitHub",
                 "url": "https://github.com/axinyyyx",
-                "icon": "github"
+                "icon": "fab fa-github"
             },
             {
                 "platform": "Instagram",
                 "url": "https://www.instagram.com/rishabhsahill",
-                "icon": "instagram"
+                "icon": "fab fa-instagram"
             },
             {
                 "platform": "Twitter",
                 "url": "https://x.com/rishabhsahill",
-                "icon": "twitter"
+                "icon": "fab fa-x"
             },
             {
                 "platform": "Facebook",
                 "url": "https://www.facebook.com/rishabhsahill",
-                "icon": "facebook"
+                "icon": "fab fa-facebook"
             },
             {
                 "platform": "Email",
                 "url": "mailto:githubsahil4@gmail.com",
-                "icon": "envelope"
+                "icon": "fa fa-envelope"
             }
         ]
     },
