@@ -114,7 +114,7 @@ $(document).ready(function() {
             contacts.forEach(contact => {
                 detailsElements.developerContacts.append(`
                     <a href="${contact.url}" target="_blank" class="text-teal-500 hover:text-teal-300 transition-all duration-200">
-                        <i class="fab fa-${contact.icon} text-lg"></i>
+                        <i class="${contact.icon} text-lg"></i>
                     </a>
                 `);
             });

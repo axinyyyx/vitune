@@ -79,10 +79,10 @@ $(document).ready(function() {
         PLAYBACK_TIME: 'playback_time'
     };
 
-    const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
+    const SEARCH_URL = 'https://api-jio-saavan.vercel.app/api/search/songs?query=';
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
-    const DEFAULT_SONG_IMAGE = 'https://via.placeholder.com/500';
+    const DEFAULT_SONG_IMAGE = 'img/58964258.png';
 
     // Debounce Function
     function debounce(func, wait) {
@@ -373,7 +373,7 @@ $(document).ready(function() {
         elements.clearSearch.off('click').on('click', () => {
             console.log('Clear search clicked');
             clearSearch();
-            showTab('search'); // Stay in search tab
+            showTab('search');
         });
 
         elements.loadMoreBtn.off('click').on('click', () => {
@@ -537,7 +537,6 @@ $(document).ready(function() {
             updatePlayPauseButton();
         });
 
-        // Ensure ended event is bound only once
         setupAutoPlay();
     }
 
@@ -671,7 +670,7 @@ $(document).ready(function() {
             console.log('API Response:', json);
             const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const isMoodFilterOn = settings.moodFilter === 'on';
-            const results = json.data?.results || json.results || [];
+            const results = json.data?.results || [];
 
             if (!results.length) {
                 elements.results.html(`
@@ -689,15 +688,15 @@ $(document).ready(function() {
             state.lastSearch = query;
             const bitrateIndex = settings.bitrate || '4';
             const songs = results
-                .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.link)
+                .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.url)
                 .map(track => ({
                     id: track.id,
                     name: textAbstract(track.name, 25),
                     album: textAbstract(track.album?.name || '', 20),
-                    artist: textAbstract(track.primaryArtists, 30),
+                    artist: textAbstract(track.artists?.primary?.map(a => a.name).join(', ') || '', 30),
                     duration: formatDuration(track.duration || 0),
-                    image: track.image && track.image[2]?.link || track.image && track.image[1]?.link || DEFAULT_SONG_IMAGE,
-                    url: track.downloadUrl[bitrateIndex].link,
+                    image: track.image && track.image[2]?.url || track.image && track.image[1]?.url || DEFAULT_SONG_IMAGE,
+                    url: track.downloadUrl[bitrateIndex].url,
                     quality: bitrateIndex === '4' ? '320' : bitrateIndex === '3' ? '160' : bitrateIndex === '2' ? '96' : '64',
                     mood: track.mood || 'unknown',
                     year: track.year || ''
@@ -751,7 +750,7 @@ $(document).ready(function() {
         doViTuneSearch(state.lastSearch);
     }
 
-   // Playback Functions
+    // Playback Functions
     async function playAudio(audioUrl, songId) {
         console.log('playAudio called:', { songId, audioUrl });
         state.isTransitioning = false;
@@ -766,7 +765,7 @@ $(document).ready(function() {
         }
 
         try {
-            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
+            const response = await fetch(audioUrl, { method: 'HEAD' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
         } catch (error) {
             console.error('Song unavailable:', { audioUrl, error });
@@ -835,8 +834,6 @@ $(document).ready(function() {
         }
     }
 
-    
-    // Playback Functions
     async function playAudio1(audioUrl, songId, startTime = null) {
         console.log('playAudio called:', { songId, audioUrl, startTime });
         if (state.isTransitioning) {
@@ -854,7 +851,7 @@ $(document).ready(function() {
         }
 
         try {
-            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
+            const response = await fetch(audioUrl, { method: 'HEAD' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -1050,7 +1047,6 @@ $(document).ready(function() {
         }
         state.isTransitioning = true;
 
-        // Check play queue first
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             console.log('Playing from queue:', nextSong.name);
@@ -1074,7 +1070,6 @@ $(document).ready(function() {
         console.log('Current index:', currentIndex);
 
         if (currentIndex === -1 && context.songs.length > 0) {
-            // If current song not found in context, start from first song
             const nextSong = context.songs[0];
             console.log('Current song not found, playing first song:', nextSong.name);
             state.resultsObjects[nextSong.id] = { track: nextSong };
@@ -1113,7 +1108,6 @@ $(document).ready(function() {
 
         const currentTime = elements.player[0].currentTime;
         if (currentTime > 5) {
-            // Restart current song if played more than 5 seconds
             elements.player[0].currentTime = 0;
             elements.player[0].play().then(() => {
                 state.isPlaying = true;
@@ -1418,7 +1412,7 @@ $(document).ready(function() {
         const validHistory = [];
         for (const song of history) {
             try {
-                const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
+                const response = await fetch(song.url, { method: 'HEAD' });
                 if (response.ok) {
                     validHistory.push(song);
                     state.resultsObjects[song.id] = { track: song };
@@ -1724,7 +1718,6 @@ $(document).ready(function() {
     }
 
     function setupAutoPlay() {
-        // Remove any existing 'ended' event listeners to prevent duplicates
         elements.player.off('ended').on('ended', () => {
             console.log('Song ended:', { isLooping: state.isLooping, currentSongId: state.currentSongId });
             if (!state.isLooping) {
