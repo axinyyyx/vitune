@@ -79,10 +79,10 @@ $(document).ready(function() {
         PLAYBACK_TIME: 'playback_time'
     };
 
-    const SEARCH_URL = 'https://api-jio-saavan.vercel.app/api/search/songs?query=';
+    const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
-    const DEFAULT_SONG_IMAGE = 'img/58964258.png';
+    const DEFAULT_SONG_IMAGE = 'https://via.placeholder.com/500';
 
     // Debounce Function
     function debounce(func, wait) {
@@ -233,7 +233,6 @@ $(document).ready(function() {
                 state.isPlaying = false;
                 updatePlayPauseButton();
                 elements.status.text('Paused due to volume set to 0');
-                elements.status.show().delay(5000).fadeOut();
             }
         });
     }
@@ -283,7 +282,6 @@ $(document).ready(function() {
             if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
                 e.preventDefault();
                 elements.status.text('Refresh disabled.');
-                elements.status.show().delay(5000).fadeOut();
             }
         });
         window.onbeforeunload = (e) => {
@@ -375,7 +373,7 @@ $(document).ready(function() {
         elements.clearSearch.off('click').on('click', () => {
             console.log('Clear search clicked');
             clearSearch();
-            showTab('search');
+            showTab('search'); // Stay in search tab
         });
 
         elements.loadMoreBtn.off('click').on('click', () => {
@@ -488,7 +486,6 @@ $(document).ready(function() {
             error: () => {
                 console.error('Playback error:', elements.audioSource.attr('src'));
                 elements.status.text('Error: Song unavailable. Skipping...');
-                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
                 playNextSong();
             },
@@ -540,6 +537,7 @@ $(document).ready(function() {
             updatePlayPauseButton();
         });
 
+        // Ensure ended event is bound only once
         setupAutoPlay();
     }
 
@@ -565,14 +563,12 @@ $(document).ready(function() {
 
         if (!name) {
             elements.status.text('Please enter a valid playlist name');
-            elements.status.show().delay(5000).fadeOut();
             return;
         }
 
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (playlists[name]) {
             elements.status.text('Playlist already exists!');
-            elements.status.show().delay(5000).fadeOut();
             return;
         }
 
@@ -581,7 +577,6 @@ $(document).ready(function() {
         renderPlaylists();
         loadHomeContent();
         elements.status.text(`Playlist "${name}" created`);
-        elements.status.show().delay(5000).fadeOut();
         console.log('Playlist created:', name);
         if (!elements.playlistModal.hasClass('hidden') && state.currentSongId) {
             showPlaylistModal(state.resultsObjects[state.currentSongId].track);
@@ -676,7 +671,7 @@ $(document).ready(function() {
             console.log('API Response:', json);
             const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
             const isMoodFilterOn = settings.moodFilter === 'on';
-            const results = json.data?.results || [];
+            const results = json.data?.results || json.results || [];
 
             if (!results.length) {
                 elements.results.html(`
@@ -694,15 +689,15 @@ $(document).ready(function() {
             state.lastSearch = query;
             const bitrateIndex = settings.bitrate || '4';
             const songs = results
-                .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.url)
+                .filter(track => track.downloadUrl && track.downloadUrl[bitrateIndex]?.link)
                 .map(track => ({
                     id: track.id,
                     name: textAbstract(track.name, 25),
                     album: textAbstract(track.album?.name || '', 20),
-                    artist: textAbstract(track.artists?.primary?.map(a => a.name).join(', ') || '', 30),
+                    artist: textAbstract(track.primaryArtists, 30),
                     duration: formatDuration(track.duration || 0),
-                    image: track.image && track.image[2]?.url || track.image && track.image[1]?.url || DEFAULT_SONG_IMAGE,
-                    url: track.downloadUrl[bitrateIndex].url,
+                    image: track.image && track.image[2]?.link || track.image && track.image[1]?.link || DEFAULT_SONG_IMAGE,
+                    url: track.downloadUrl[bitrateIndex].link,
                     quality: bitrateIndex === '4' ? '320' : bitrateIndex === '3' ? '160' : bitrateIndex === '2' ? '96' : '64',
                     mood: track.mood || 'unknown',
                     year: track.year || ''
@@ -756,7 +751,7 @@ $(document).ready(function() {
         doViTuneSearch(state.lastSearch);
     }
 
-    // Playback Functions
+   // Playback Functions
     async function playAudio(audioUrl, songId) {
         console.log('playAudio called:', { songId, audioUrl });
         state.isTransitioning = false;
@@ -771,12 +766,11 @@ $(document).ready(function() {
         }
 
         try {
-            const response = await fetch(audioUrl, { method: 'HEAD' });
+            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
         } catch (error) {
             console.error('Song unavailable:', { audioUrl, error });
             elements.status.text('Error: Song unavailable. Skipping...');
-            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             playNextSong();
             return;
@@ -828,7 +822,6 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song. Skipping...');
-            elements.status.show().delay(5000).fadeOut();
             playNextSong();
         } finally {
             state.isTransitioning = false;
@@ -842,6 +835,8 @@ $(document).ready(function() {
         }
     }
 
+    
+    // Playback Functions
     async function playAudio1(audioUrl, songId, startTime = null) {
         console.log('playAudio called:', { songId, audioUrl, startTime });
         if (state.isTransitioning) {
@@ -854,20 +849,18 @@ $(document).ready(function() {
         if (!song) {
             console.error('Song not found:', songId);
             elements.status.text('Error: Song not found.');
-            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             return;
         }
 
         try {
-            const response = await fetch(audioUrl, { method: 'HEAD' });
+            const response = await fetch(audioUrl, { method: 'HEAD', mode: 'cors' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
             console.error('Song unavailable:', audioUrl);
             elements.status.text('Error: Song unavailable. Skipping...');
-            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             playNextSong();
             return;
@@ -925,7 +918,6 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song. Skipping...');
-            elements.status.show().delay(5000).fadeOut();
             playNextSong();
         } finally {
             state.isTransitioning = false;
@@ -944,7 +936,6 @@ $(document).ready(function() {
     function togglePlayPause() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
-            elements.status.show().delay(5000).fadeOut();
             return;
         }
         if (state.isPlaying) {
@@ -956,7 +947,6 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Toggle play error:', error);
                 elements.status.text('Error: Unable to play.');
-                elements.status.show().delay(5000).fadeOut();
                 state.isPlaying = false;
             });
         }
@@ -1060,6 +1050,7 @@ $(document).ready(function() {
         }
         state.isTransitioning = true;
 
+        // Check play queue first
         if (state.playQueue.length > 0) {
             const nextSong = state.playQueue.shift();
             console.log('Playing from queue:', nextSong.name);
@@ -1073,7 +1064,6 @@ $(document).ready(function() {
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
             elements.status.text('No more songs to play.');
-            elements.status.show().delay(5000).fadeOut();
             state.isPlaying = false;
             updatePlayPauseButton();
             state.isTransitioning = false;
@@ -1084,6 +1074,7 @@ $(document).ready(function() {
         console.log('Current index:', currentIndex);
 
         if (currentIndex === -1 && context.songs.length > 0) {
+            // If current song not found in context, start from first song
             const nextSong = context.songs[0];
             console.log('Current song not found, playing first song:', nextSong.name);
             state.resultsObjects[nextSong.id] = { track: nextSong };
@@ -1106,7 +1097,6 @@ $(document).ready(function() {
         } else {
             console.log('No next song, stopping');
             elements.status.text('End of playlist.');
-            elements.status.show().delay(5000).fadeOut();
             state.isPlaying = false;
             updatePlayPauseButton();
             state.isTransitioning = false;
@@ -1123,6 +1113,7 @@ $(document).ready(function() {
 
         const currentTime = elements.player[0].currentTime;
         if (currentTime > 5) {
+            // Restart current song if played more than 5 seconds
             elements.player[0].currentTime = 0;
             elements.player[0].play().then(() => {
                 state.isPlaying = true;
@@ -1132,7 +1123,6 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Restart error:', error);
                 elements.status.text('Error restarting song.');
-                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
             });
             return;
@@ -1142,7 +1132,6 @@ $(document).ready(function() {
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
             elements.status.text('No previous songs.');
-            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             return;
         }
@@ -1159,7 +1148,6 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Restart error:', error);
                 elements.status.text('Error restarting song.');
-                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
             });
             return;
@@ -1195,7 +1183,6 @@ $(document).ready(function() {
             state.playQueue.unshift(songData);
             savePlayQueue();
             elements.status.text('Added to play next');
-            elements.status.show().delay(5000).fadeOut();
             console.log('Added to play next:', songData.name);
         } else {
             console.error('Song not found for play next:', song);
@@ -1215,7 +1202,6 @@ $(document).ready(function() {
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
-            elements.status.show().delay(5000).fadeOut();
             return;
         }
         const song = state.resultsObjects[state.currentSongId]?.track;
@@ -1226,11 +1212,9 @@ $(document).ready(function() {
         if (index === -1) {
             likes.push(song);
             elements.status.text('Song liked');
-            elements.status.show().delay(1000).fadeOut();
         } else {
             likes.splice(index, 1);
             elements.status.text('Song unliked');
-            elements.status.show().delay(1000).fadeOut();
         }
         localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
         updateLikeButton();
@@ -1255,7 +1239,6 @@ $(document).ready(function() {
     function showPlaylistModalCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
-            elements.status.show().delay(5000).fadeOut();
             return;
         }
         const song = state.resultsObjects[state.currentSongId]?.track;
@@ -1304,7 +1287,6 @@ $(document).ready(function() {
             playlists[playlistName].unshift(song);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Added to "${playlistName}"`);
-            elements.status.show().delay(5000).fadeOut();
             if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
             }
@@ -1324,7 +1306,6 @@ $(document).ready(function() {
             playlists[playlistName] = playlists[playlistName].filter(s => s.id !== songId);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Removed from "${playlistName}"`);
-            elements.status.show().delay(5000).fadeOut();
             if ($('#playlists-tab').is(':visible') && state.currentPlaylistView === playlistName) {
                 renderPlaylistSongs(playlistName);
             } else if ($('#playlists-tab').is(':visible')) {
@@ -1389,7 +1370,6 @@ $(document).ready(function() {
             .catch(error => {
                 downloadItem.find('.track-status').text(`Error: ${error.message}`);
                 elements.status.text('Download failed.');
-                elements.status.show().delay(5000).fadeOut();
                 console.error('Download error:', error);
             });
     }
@@ -1438,7 +1418,7 @@ $(document).ready(function() {
         const validHistory = [];
         for (const song of history) {
             try {
-                const response = await fetch(song.url, { method: 'HEAD' });
+                const response = await fetch(song.url, { method: 'HEAD', mode: 'cors' });
                 if (response.ok) {
                     validHistory.push(song);
                     state.resultsObjects[song.id] = { track: song };
@@ -1582,7 +1562,6 @@ $(document).ready(function() {
                     loadHomeContent();
                 }
                 elements.status.text(`Playlist "${playlistName}" deleted`);
-                elements.status.show().delay(5000).fadeOut();
             }
         });
 
@@ -1620,7 +1599,6 @@ $(document).ready(function() {
             } else {
                 console.error('Song not found for play:', songId);
                 elements.status.text('Error: Song not found.');
-                elements.status.show().delay(5000).fadeOut();
             }
         }, 200);
 
@@ -1645,7 +1623,6 @@ $(document).ready(function() {
             const song = state.resultsObjects[songId]?.track;
             if (!song) {
                 elements.status.text('Error: Song not found.');
-                elements.status.show().delay(5000).fadeOut();
                 return;
             }
             let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
@@ -1653,12 +1630,10 @@ $(document).ready(function() {
             if (index === -1) {
                 likes.push(song);
                 elements.status.text('Song liked');
-                elements.status.show().delay(1000).fadeOut();
                 $(this).html('<i class="fa fa-heart mr-1"></i>Unlike');
             } else {
                 likes.splice(index, 1);
                 elements.status.text('Song unliked');
-                elements.status.show().delay(1000).fadeOut();
                 console.log('Unlike button clicked:', song.id);
                 $(this).html('<i class="fa fa-heart-o mr-1"></i>Like');
             }
@@ -1707,7 +1682,6 @@ $(document).ready(function() {
                 renderPlaylists();
                 loadHomeContent();
                 elements.status.text(`Playlist "${playlistName}" deleted`);
-                elements.status.show().delay(5000).fadeOut();
             }
         });
 
@@ -1750,6 +1724,7 @@ $(document).ready(function() {
     }
 
     function setupAutoPlay() {
+        // Remove any existing 'ended' event listeners to prevent duplicates
         elements.player.off('ended').on('ended', () => {
             console.log('Song ended:', { isLooping: state.isLooping, currentSongId: state.currentSongId });
             if (!state.isLooping) {
