@@ -82,7 +82,7 @@ $(document).ready(function() {
     const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
-    const DEFAULT_SONG_IMAGE = 'https://via.placeholder.com/500';
+    const DEFAULT_SONG_IMAGE = 'img/58964258.png';
 
     // Debounce Function
     function debounce(func, wait) {
@@ -233,6 +233,7 @@ $(document).ready(function() {
                 state.isPlaying = false;
                 updatePlayPauseButton();
                 elements.status.text('Paused due to volume set to 0');
+                elements.status.show().delay(5000).fadeOut();
             }
         });
     }
@@ -282,6 +283,7 @@ $(document).ready(function() {
             if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
                 e.preventDefault();
                 elements.status.text('Refresh disabled.');
+                elements.status.show().delay(5000).fadeOut();
             }
         });
         window.onbeforeunload = (e) => {
@@ -486,6 +488,7 @@ $(document).ready(function() {
             error: () => {
                 console.error('Playback error:', elements.audioSource.attr('src'));
                 elements.status.text('Error: Song unavailable. Skipping...');
+                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
                 playNextSong();
             },
@@ -563,12 +566,14 @@ $(document).ready(function() {
 
         if (!name) {
             elements.status.text('Please enter a valid playlist name');
+            elements.status.show().delay(5000).fadeOut();
             return;
         }
 
         const playlists = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLISTS) || '{}');
         if (playlists[name]) {
             elements.status.text('Playlist already exists!');
+            elements.status.show().delay(5000).fadeOut();
             return;
         }
 
@@ -577,6 +582,7 @@ $(document).ready(function() {
         renderPlaylists();
         loadHomeContent();
         elements.status.text(`Playlist "${name}" created`);
+        elements.status.show().delay(5000).fadeOut();
         console.log('Playlist created:', name);
         if (!elements.playlistModal.hasClass('hidden') && state.currentSongId) {
             showPlaylistModal(state.resultsObjects[state.currentSongId].track);
@@ -771,6 +777,7 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Song unavailable:', { audioUrl, error });
             elements.status.text('Error: Song unavailable. Skipping...');
+            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             playNextSong();
             return;
@@ -822,6 +829,7 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song. Skipping...');
+            elements.status.show().delay(5000).fadeOut();
             playNextSong();
         } finally {
             state.isTransitioning = false;
@@ -849,6 +857,7 @@ $(document).ready(function() {
         if (!song) {
             console.error('Song not found:', songId);
             elements.status.text('Error: Song not found.');
+            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             return;
         }
@@ -861,6 +870,7 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Song unavailable:', audioUrl);
             elements.status.text('Error: Song unavailable. Skipping...');
+            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             playNextSong();
             return;
@@ -918,6 +928,7 @@ $(document).ready(function() {
         } catch (error) {
             console.error('Audio play error:', error);
             elements.status.text('Error playing song. Skipping...');
+            elements.status.show().delay(5000).fadeOut();
             playNextSong();
         } finally {
             state.isTransitioning = false;
@@ -936,6 +947,7 @@ $(document).ready(function() {
     function togglePlayPause() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
+            elements.status.show().delay(5000).fadeOut();
             return;
         }
         if (state.isPlaying) {
@@ -947,6 +959,7 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Toggle play error:', error);
                 elements.status.text('Error: Unable to play.');
+                elements.status.show().delay(5000).fadeOut();
                 state.isPlaying = false;
             });
         }
@@ -1064,6 +1077,7 @@ $(document).ready(function() {
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
             elements.status.text('No more songs to play.');
+            elements.status.show().delay(5000).fadeOut();
             state.isPlaying = false;
             updatePlayPauseButton();
             state.isTransitioning = false;
@@ -1097,6 +1111,7 @@ $(document).ready(function() {
         } else {
             console.log('No next song, stopping');
             elements.status.text('End of playlist.');
+            elements.status.show().delay(5000).fadeOut();
             state.isPlaying = false;
             updatePlayPauseButton();
             state.isTransitioning = false;
@@ -1123,6 +1138,7 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Restart error:', error);
                 elements.status.text('Error restarting song.');
+                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
             });
             return;
@@ -1132,6 +1148,7 @@ $(document).ready(function() {
         if (context.songs.length === 0) {
             console.log('No songs in context:', context.type);
             elements.status.text('No previous songs.');
+            elements.status.show().delay(5000).fadeOut();
             state.isTransitioning = false;
             return;
         }
@@ -1148,6 +1165,7 @@ $(document).ready(function() {
             }).catch(error => {
                 console.error('Restart error:', error);
                 elements.status.text('Error restarting song.');
+                elements.status.show().delay(5000).fadeOut();
                 state.isTransitioning = false;
             });
             return;
@@ -1183,6 +1201,7 @@ $(document).ready(function() {
             state.playQueue.unshift(songData);
             savePlayQueue();
             elements.status.text('Added to play next');
+            elements.status.show().delay(5000).fadeOut();
             console.log('Added to play next:', songData.name);
         } else {
             console.error('Song not found for play next:', song);
@@ -1202,6 +1221,7 @@ $(document).ready(function() {
     function toggleLikeCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
+            elements.status.show().delay(5000).fadeOut();
             return;
         }
         const song = state.resultsObjects[state.currentSongId]?.track;
@@ -1212,9 +1232,11 @@ $(document).ready(function() {
         if (index === -1) {
             likes.push(song);
             elements.status.text('Song liked');
+            elements.status.show().delay(1000).fadeOut();
         } else {
             likes.splice(index, 1);
             elements.status.text('Song unliked');
+            elements.status.show().delay(1000).fadeOut();
         }
         localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
         updateLikeButton();
@@ -1239,6 +1261,7 @@ $(document).ready(function() {
     function showPlaylistModalCurrentSong() {
         if (!state.currentSongId) {
             elements.status.text('No song selected.');
+            elements.status.show().delay(5000).fadeOut();
             return;
         }
         const song = state.resultsObjects[state.currentSongId]?.track;
@@ -1287,6 +1310,7 @@ $(document).ready(function() {
             playlists[playlistName].unshift(song);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Added to "${playlistName}"`);
+            elements.status.show().delay(5000).fadeOut();
             if ($('#playlists-tab').is(':visible')) {
                 renderPlaylists();
             }
@@ -1306,6 +1330,7 @@ $(document).ready(function() {
             playlists[playlistName] = playlists[playlistName].filter(s => s.id !== songId);
             localStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
             elements.status.text(`Removed from "${playlistName}"`);
+            elements.status.show().delay(5000).fadeOut();
             if ($('#playlists-tab').is(':visible') && state.currentPlaylistView === playlistName) {
                 renderPlaylistSongs(playlistName);
             } else if ($('#playlists-tab').is(':visible')) {
@@ -1370,6 +1395,7 @@ $(document).ready(function() {
             .catch(error => {
                 downloadItem.find('.track-status').text(`Error: ${error.message}`);
                 elements.status.text('Download failed.');
+                elements.status.show().delay(5000).fadeOut();
                 console.error('Download error:', error);
             });
     }
@@ -1562,6 +1588,7 @@ $(document).ready(function() {
                     loadHomeContent();
                 }
                 elements.status.text(`Playlist "${playlistName}" deleted`);
+                elements.status.show().delay(5000).fadeOut();
             }
         });
 
@@ -1599,6 +1626,7 @@ $(document).ready(function() {
             } else {
                 console.error('Song not found for play:', songId);
                 elements.status.text('Error: Song not found.');
+                elements.status.show().delay(5000).fadeOut();
             }
         }, 200);
 
@@ -1623,6 +1651,7 @@ $(document).ready(function() {
             const song = state.resultsObjects[songId]?.track;
             if (!song) {
                 elements.status.text('Error: Song not found.');
+                elements.status.show().delay(5000).fadeOut();
                 return;
             }
             let likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '[]');
@@ -1630,10 +1659,12 @@ $(document).ready(function() {
             if (index === -1) {
                 likes.push(song);
                 elements.status.text('Song liked');
+                elements.status.show().delay(1000).fadeOut();
                 $(this).html('<i class="fa fa-heart mr-1"></i>Unlike');
             } else {
                 likes.splice(index, 1);
                 elements.status.text('Song unliked');
+                elements.status.show().delay(1000).fadeOut();
                 console.log('Unlike button clicked:', song.id);
                 $(this).html('<i class="fa fa-heart-o mr-1"></i>Like');
             }
@@ -1682,6 +1713,7 @@ $(document).ready(function() {
                 renderPlaylists();
                 loadHomeContent();
                 elements.status.text(`Playlist "${playlistName}" deleted`);
+                elements.status.show().delay(5000).fadeOut();
             }
         });
 
