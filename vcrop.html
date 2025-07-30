@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Time Clipper</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        #search-box {
+            width: 100%;
+            max-width: 600px;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: #2a2a2a;
+            color: #fff;
+            font-size: 16px;
+            margin: 0 auto 20px;
+            display: block;
+            box-sizing: border-box;
+        }
+        #results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 0 10px;
+        }
+        .song-card {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .song-card:hover {
+            background-color: #3a3a3a;
+        }
+        .song-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .song-card h3 {
+            font-size: 14px;
+            margin: 0 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .song-card p {
+            font-size: 12px;
+            color: #aaa;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #status {
+            text-align: center;
+            margin: 20px 0;
+            color: #888;
+            font-size: 14px;
+        }
+        #time-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .modal-content h3 {
+            margin: 0 0 15px;
+            font-size: 16px;
+        }
+        .modal-content .time-display {
+            font-size: 14px;
+            margin: 10px 0;
+            color: #ccc;
+        }
+        .modal-content input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .modal-content button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #submit-time {
+            background-color: #1db954;
+            color: #fff;
+        }
+        #submit-time:hover {
+            background-color: #1ed760;
+        }
+        #cancel-time {
+            background-color: #555;
+            color: #fff;
+        }
+        #cancel-time:hover {
+            background-color: #666;
+        }
+        #output {
+            margin: 20px auto;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #output pre {
+            margin: 0;
+            font-size: 14px;
+            text-align: left;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        #output-buttons {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        #share-btn, #copy-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #share-btn {
+            background-color: #1db954;
+            color: #fff;
+        }
+        #share-btn:hover {
+            background-color: #1ed760;
+        }
+        #copy-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        #copy-btn:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 600px) {
+            #results {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            .song-card img {
+                height: 120px;
+            }
+            .song-card h3 {
+                font-size: 12px;
+            }
+            .song-card p {
+                font-size: 10px;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            .modal-content h3 {
+                font-size: 14px;
+            }
+            .modal-content button {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="text" id="search-box" placeholder="Search for songs...">
+        <div id="status"></div>
+        <div id="results"></div>
+        <div id="output">
+            <pre id="output-json"></pre>
+            <div id="output-buttons">
+                <button id="share-btn">Share</button>
+                <button id="copy-btn">Copy JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="time-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Select Time Range</h3>
+            <h3 id="song-title"></h3>
+            <p class="time-display">Duration: <span id="song-duration">0:00</span></p>
+            <p class="time-display">Start: <span id="start-time">0:00</span></p>
+            <input type="range" id="start-slider" min="0" max="100" value="0">
+            <p class="time-display">End: <span id="end-time">0:00</span></p>
+            <input type="range" id="end-slider" min="0" max="100" value="100">
+            <button id="submit-time">Submit</button>
+            <button id="cancel-time">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const elements = {
+                searchBox: $('#search-box'),
+                results: $('#results'),
+                status: $('#status'),
+                timeModal: $('#time-modal'),
+                modalTitle: $('#modal-title'),
+                songTitle: $('#song-title'),
+                songDuration: $('#song-duration'),
+                startTime: $('#start-time'),
+                endTime: $('#end-time'),
+                startSlider: $('#start-slider'),
+                endSlider: $('#end-slider'),
+                submitTime: $('#submit-time'),
+                cancelTime: $('#cancel-time'),
+                output: $('#output'),
+                outputJson: $('#output-json'),
+                shareBtn: $('#share-btn'),
+                copyBtn: $('#copy-btn')
+            };
+
+            let state = {
+                selectedSong: null,
+                songDuration: 0
+            };
+
+            const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
+            const API_TIMEOUT = 10000;
+            const DEFAULT_SONG_IMAGE = 'https://via.placeholder.com/150';
+
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            function init() {
+                bindEventListeners();
+            }
+
+            function bindEventListeners() {
+                const debouncedSearch = debounce((query) => {
+                    if (query.length >= 2) {
+                        doSearch(query.trim());
+                    }
+                }, 300);
+
+                elements.searchBox.on('input', function() {
+                    const query = $(this).val().trim();
+                    debouncedSearch(query);
+                });
+
+                elements.startSlider.on('input', updateStartTime);
+                elements.endSlider.on('input', updateEndTime);
+                elements.submitTime.on('click', handleTimeSubmit);
+                elements.cancelTime.on('click', closeModal);
+                elements.shareBtn.on('click', handleShare);
+                elements.copyBtn.on('click', handleCopy);
+            }
+
+            async function doSearch(query) {
+                elements.status.text('Searching...');
+                elements.results.empty();
+                elements.output.hide();
+
+                const encodedQuery = encodeURIComponent(query);
+                const searchQuery = `${encodedQuery}&limit=20`;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+                try {
+                    const response = await fetch(SEARCH_URL + searchQuery, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const json = await response.json();
+                    const results = json.data?.results || json.results || [];
+
+                    if (!results.length) {
+                        elements.results.html('<p class="text-center">No results found.</p>');
+                        elements.status.text('');
+                        return;
+                    }
+
+                    const songs = results
+                        .filter(track => track.downloadUrl && track.downloadUrl[4]?.link && track.duration)
+                        .map(track => ({
+                            id: track.id,
+                            name: textAbstract(track.name, 25),
+                            artist: textAbstract(track.primaryArtists, 30),
+                            image: track.image && track.image[2]?.link || DEFAULT_SONG_IMAGE,
+                            url: track.downloadUrl[4].link,
+                            duration: parseInt(track.duration, 10) || 0
+                        }));
+
+                    elements.results.html(songs.map(song => `
+                        <div class="song-card" data-song='${JSON.stringify(song).replace(/'/g, "\\'")}'>
+                            <img src="${song.image}" alt="Song Image" onerror="this.src='${DEFAULT_SONG_IMAGE}'">
+                            <h3>${song.name}</h3>
+                            <p>${song.artist}</p>
+                            <p>${formatDuration(song.duration)}</p>
+                        </div>
+                    `).join(''));
+
+                    $('.song-card').on('click', function() {
+                        state.selectedSong = JSON.parse($(this).attr('data-song'));
+                        openModal();
+                    });
+
+                    elements.status.text('');
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    elements.status.text(`Error: ${error.name === 'AbortError' ? 'Request timed out' : error.message}`);
+                    elements.results.empty();
+                }
+            }
+
+            function openModal() {
+                state.songDuration = state.selectedSong.duration;
+                elements.songTitle.text(`${state.selectedSong.name} - ${state.selectedSong.artist}`);
+                elements.songDuration.text(formatDuration(state.songDuration));
+                elements.startSlider.attr('max', state.songDuration);
+                elements.endSlider.attr('max', state.songDuration);
+                elements.startSlider.val(0);
+                elements.endSlider.val(state.songDuration);
+                updateStartTime();
+                updateEndTime();
+                elements.timeModal.show();
+            }
+
+            function closeModal() {
+                elements.timeModal.hide();
+                state.selectedSong = null;
+                state.songDuration = 0;
+            }
+
+            function updateStartTime() {
+                const startSeconds = parseInt(elements.startSlider.val(), 10);
+                elements.startTime.text(formatDuration(startSeconds));
+                if (parseInt(elements.endSlider.val(), 10) < startSeconds) {
+                    elements.endSlider.val(startSeconds);
+                    updateEndTime();
+                }
+            }
+
+            function updateEndTime() {
+                const endSeconds = parseInt(elements.endSlider.val(), 10);
+                elements.endTime.text(formatDuration(endSeconds));
+                if (parseInt(elements.startSlider.val(), 10) > endSeconds) {
+                    elements.startSlider.val(endSeconds);
+                    updateStartTime();
+                }
+            }
+
+            function handleTimeSubmit() {
+                const startSeconds = parseInt(elements.startSlider.val(), 10);
+                const endSeconds = parseInt(elements.endSlider.val(), 10);
+
+                if (endSeconds <= startSeconds) {
+                    alert('End time must be greater than start time');
+                    return;
+                }
+
+                if (endSeconds > state.songDuration) {
+                    alert('End time cannot exceed song duration');
+                    return;
+                }
+
+                generateOutput(state.selectedSong, startSeconds, endSeconds);
+                closeModal();
+            }
+
+            function handleShare() {
+                const jsonText = elements.outputJson.text();
+                const output = JSON.parse(jsonText);
+                if (navigator.share) {
+                    navigator.share({
+                        title: output.name,
+                        url: output.url
+                    }).catch(error => {
+                        console.error('Share error:', error);
+                        alert('Error sharing the link');
+                    });
+                } else {
+                    alert('Share feature not supported in this browser. Please copy the JSON.');
+                }
+            }
+
+            function handleCopy() {
+                const jsonText = elements.outputJson.text();
+                navigator.clipboard.writeText(jsonText).then(() => {
+                    alert('JSON copied to clipboard!');
+                }).catch(error => {
+                    console.error('Copy error:', error);
+                    alert('Error copying JSON');
+                });
+            }
+
+            function generateOutput(song, start, end) {
+                const output = {
+                    name: `${song.name} - ${song.artist}`,
+                    url: `${song.url}?start=${start}&end=${end}`
+                };
+                elements.outputJson.text(JSON.stringify(output, null, 4));
+                elements.output.show();
+            }
+
+            function formatDuration(seconds) {
+                const min = Math.floor(seconds / 60);
+                const sec = Math.floor(seconds % 60);
+                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }
+
+            function textAbstract(text, length) {
+                if (!text) return '';
+                text = $('<div/>').html(text).text();
+                if (text.length <= length) return text;
+                return text.substring(0, length).trim() + '...';
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
