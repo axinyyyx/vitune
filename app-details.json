@@ -12,7 +12,7 @@
         "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.png",
         "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.png",
         "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.png",
-        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.png"
     ],
     "developer": {
         "name": "Rishabh Kumar",
@@ -60,7 +60,5 @@
         "Compatible with Android Auto — enjoy music in your car",
         "Open YouTube or YouTube Music links (songs, playlists, channels, etc.) directly with ViTune",
         "Ridiculously lightweight APK — fast, smooth, and minimal"
-]
-
+    ]
 }
-
