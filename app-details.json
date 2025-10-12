@@ -1,20 +1,18 @@
 {
     "name": "ViTune",
     "description": "ViTune is your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs and dive into music with a sleek, modern interface.",
-    "version": "1.1.R.2",
-    "lastUpdated": "June 20, 2025",
-    "releaseDate": "June 10, 2025",
+    "version": "v1.1.6",
+    "lastUpdated": "Aug 9, 2025",
     "icon": "img/logo.png",
     "apkUrl": "https://github.com/axinyyyx/vitune/releases/download/16/app.vitune.android_17.apk",
     "browserUrl": "https://vitune-web.vercel.app/",
     "screenshots": [
-        "img/screenshot0.jpg",
-        "img/screenshot1.jpg",
-        "img/screenshot2.jpg",
-        "img/screenshot3.jpg",
-        "img/screenshot4.jpg",
-        "img/screenshot5.jpg",
-        "img/screenshot6.jpg"
+        "https://github.com/axinyyyx/ViTune-Android/raw/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.png",
+        "https://github.com/axinyyyx/ViTune-Android/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.png",
     ],
     "developer": {
         "name": "Rishabh Kumar",
@@ -48,18 +46,21 @@
         ]
     },
     "features": [
-        "Seamless music streaming with high-quality audio (up to 320kbps)",
-        "Create and manage personalized playlists",
-        "Offline song downloads for on-the-go listening",
-        "Advanced search for songs, artists, and albums",
-        "Mood-based music recommendations",
-        "Customizable themes (Dark/Light) and accent colors",
-        "Adjustable font styles and sizes for accessibility",
-        "Dynamic progress bar styles (Simple, Gradient, Wave)",
-        "Data backup and restore functionality",
-        "Transparent effects for song cards and player",
-        "Variable animation speeds for a tailored experience",
-        "Improved stability and bug fixes for enhanced performance (v1.1.R.2)"
-    ]
+        "Play (almost) any song or video from YouTube Music",
+        "Play music stored on your device",
+        "Play songs in the background",
+        "Cache songs for offline playback",
+        "Search for songs, albums, artists, videos, and playlists",
+        "Discover new songs by mood or genre",
+        "Import playlists from YouTube",
+        "Fetch, display, and edit lyrics (including synchronized lyrics)",
+        "Manage playlists locally or synchronize with the cloud",
+        "Highly customizable with dynamic themes and Material You design",
+        "Normalize audio for a balanced listening experience",
+        "Compatible with Android Auto — enjoy music in your car",
+        "Open YouTube or YouTube Music links (songs, playlists, channels, etc.) directly with ViTune",
+        "Ridiculously lightweight APK — fast, smooth, and minimal"
+]
+
 }
 
