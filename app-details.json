@@ -1,7 +1,7 @@
 {
     "name": "ViTune",
     "description": "ViTune is your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs and dive into music with a sleek, modern interface.",
-    "version": "v1.1.6",
+    "version": "v1.1.7",
     "lastUpdated": "Nov 11, 2025",
     "icon": "img/logo.png",
     "apkUrl": "https://github.com/axinyyyx/vitune/releases/tag/vitune/app.vitune.android_18.apk",
@@ -62,5 +62,6 @@
         "Ridiculously lightweight APK — fast, smooth, and minimal"
     ]
 }
+
 
 
