@@ -79,7 +79,8 @@ $(document).ready(function() {
         PLAYBACK_TIME: 'playback_time'
     };
 
-    const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
+    // const SEARCH_URL = 'https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=';
+    const SEARCH_URL = 'https://jio-saavan-api-three.vercel.app/api/search/songs?query=';
     const API_TIMEOUT = 10000;
     const DEFAULT_PLAYLIST_IMAGE = 'img/58964258.png';
     const DEFAULT_SONG_IMAGE = 'img/58964258.png';
