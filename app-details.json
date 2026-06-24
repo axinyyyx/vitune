@@ -2,10 +2,10 @@
     "name": "ViTune",
     "description": "ViTune is your ultimate music streaming experience! Enjoy seamless playback, curated playlists, and offline downloads. Search for your favorite songs and dive into music with a sleek, modern interface.",
     "version": "v1.1.8",
-    "lastUpdated": "Jan 30, 2026",
+    "lastUpdated": "Jun 16, 2026",
     "icon": "img/logo.png",
-    "apkUrl": "https://github.com/axinyyyx/vitune/releases/download/vitune/app.vitune.android_19.apk",
-    "browserUrl": "https://vitune-web.vercel.app/",
+    "apkUrl": "https://github.com/axinyyyx/vitune/releases/download/vitune/app.vitune.android_22.apk",
+    "browserUrl": "https://rimusic.vercel.app/",
     "screenshots": [
         "https://github.com/axinyyyx/ViTune-Android/raw/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png",
         "https://github.com/axinyyyx/ViTune-Android/raw/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.png",
